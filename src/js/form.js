@@ -11,7 +11,6 @@ import { SALLES, JOURS } from "./data.js";
 import { SOURCE, track } from "./track.js";
 import { thud } from "./audio.js";
 import { esc, pic, fr, prefersCalm } from "./ui.js";
-import { mountImages } from "./reveal.js";
 
 /* On garde LES CHOIX, jamais l'identité.
    Salle et jour coûtent du parcours — parcourir les portes, lire l'affiche
@@ -252,7 +251,9 @@ export function formHTML() {
       ).join("")}
 
       <section class="done" data-step="${STEPS.length}" hidden aria-live="polite" aria-label="Confirmation de ta séance">
-        <div class="done__media" id="done-media"></div>
+        <div class="done__media" id="done-media">
+          <img src="/seance-essai-gratuite.png" width="1200" height="630" alt="Séance d'essai gratuite Boxing Center" decoding="async" />
+        </div>
         <div class="done__body">
           <p class="eyebrow">C'est enregistré</p>
           <h3 id="done-h"></h3>
@@ -343,6 +344,7 @@ export function mountForm(root, onChange) {
     }
 
     // étape binôme
+    syncAmiFromDom(form);
     let ok = true;
     if (state.ami === null) {
       showErr("ami-choix", "Dis-nous si tu viens avec quelqu'un — oui ou non.");
@@ -363,11 +365,14 @@ export function mountForm(root, onChange) {
   };
 
   const finish = () => {
+    syncAmiFromDom(form);
     const salle = SALLES.find((s) => s.id === state.salle);
     const jour = JOURS.find((j) => j.id === state.jour);
     const prenom = (state.prenom || "").trim();
 
-    const amiPrenom = state.ami && typeof state.ami === "object" ? String(state.ami.a_prenom || "").trim() : "";
+    const aDeux = Boolean(state.ami && typeof state.ami === "object");
+    const amiPrenom = aDeux ? String(state.ami.a_prenom || "").trim() : "";
+    const amiNom = aDeux ? [amiPrenom, String(state.ami.a_nom || "").trim()].filter(Boolean).join(" ") : "";
 
     root.querySelector("#done-h").textContent = jour
       ? (amiPrenom
@@ -375,32 +380,24 @@ export function mountForm(root, onChange) {
           : `À ${jour.nom.toLowerCase()}, ${prenom}.`)
       : (amiPrenom ? `À très vite, ${prenom} et ${amiPrenom}.` : `À très vite, ${prenom}.`);
 
-    root.querySelector("#done-p").textContent = amiPrenom
-      ? `${prenom}, ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}, avec ${amiPrenom}. Présentez-vous à l'accueil en tenue de sport : le matériel est prêté. La séance de ${amiPrenom} est offerte aussi.`
+    root.querySelector("#done-p").textContent = aDeux
+      ? `${prenom}, ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}${amiPrenom ? `, avec ${amiPrenom}` : ", avec un(e) ami(e)"}. Présentez-vous à l'accueil en tenue de sport : le matériel est prêté.${amiPrenom ? ` La séance de ${amiPrenom} est offerte aussi.` : " Sa séance est offerte aussi."}`
       : `Ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}. Présente-toi à l'accueil en tenue de sport : le matériel est prêté.`;
 
     root.querySelector("#done-recap").innerHTML = [
       ["Salle", esc(salle ? salle.nom : "—")],
       ["Jour prévu", esc(jour ? jour.nom : "—")],
       ["À régler sur place", "<b>0 €</b> — au lieu de 10 €"],
-      ["Accompagné", amiPrenom ? `oui — ${esc(prenom)} et ${esc(amiPrenom)}` : "non"],
+      ["Accompagné", aDeux ? (amiNom ? `oui — ${esc(prenom)} et ${esc(amiNom)}` : "oui") : "non"],
     ]
       .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
       .join("");
 
-    const media = root.querySelector("#done-media");
-    if (media) {
-      // Registre permission : on accompagne, on n'affronte pas (voir data.js).
-      media.innerHTML = salle ? pic(salle.accueil || salle.img, { sizes: "(min-width:820px) 320px, 100vw" }) : "";
-      // Une image injectée après coup n'a pas d'écouteur de chargement :
-      // sans ce rappel, elle reste à opacité 0 et le panneau paraît vide.
-      mountImages(media);
-    }
-
-    track("formulaire_valide", { salle: state.salle, jour: state.jour, ami: !!state.ami });
+    track("formulaire_valide", { salle: state.salle, jour: state.jour, ami: aDeux });
   };
 
   const payloadFromState = (phase) => {
+    syncAmiFromDom(form);
     const ami =
       state.ami && typeof state.ami === "object"
         ? {
@@ -574,7 +571,10 @@ export function mountForm(root, onChange) {
     }
   });
 
-  form.addEventListener("input", (e) => {
+  form.addEventListener("input", onField);
+  form.addEventListener("change", onField);
+
+  function onField(e) {
     const k = e.target.dataset && e.target.dataset.k;
     if (!k) return;
     begin();
@@ -587,7 +587,16 @@ export function mountForm(root, onChange) {
     }
     showErr(k, "");
     onChange && onChange(state);
-  });
+  }
+
+  function syncAmiFromDom(formEl) {
+    if (!state.ami || typeof state.ami !== "object") return;
+    formEl.querySelectorAll("#ami-fields [data-k]").forEach((el) => {
+      const k = el.dataset.k;
+      if (!k) return;
+      state.ami[k] = el.type === "checkbox" ? el.checked : el.value;
+    });
+  }
 
   // Abandon d'étape — la donnée que le §18.1 réclame
   window.addEventListener("pagehide", () => {

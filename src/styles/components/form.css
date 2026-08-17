@@ -213,13 +213,26 @@
    tenue de sport. C'est le moment où le prospect a dit oui : il mérite
    autre chose qu'un accusé de réception. */
 .done { display: grid; }
-@media (min-width: 820px) { .done { grid-template-columns: 320px minmax(0, 1fr); } }
-.done__media { position: relative; overflow: hidden; min-height: 200px; }
-.done__media .ph { width: 100%; height: 100%; }
-.done__media .ph img { filter: contrast(1.06) saturate(0.98) brightness(0.82); }
-.done__media::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(to top, rgb(5 8 14 / 0.72), rgb(5 8 14 / 0.12));
+@media (min-width: 820px) { .done { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: stretch; } }
+.done__media {
+  position: relative; overflow: hidden;
+  background: #080808;
+  min-height: 200px;
+}
+.done__media img {
+  display: block; width: 100%; height: 100%;
+  min-height: 200px;
+  object-fit: cover; object-position: 78% 50%;
+  opacity: 1;
+}
+@media (max-width: 819px) {
+  .done__media { min-height: 0; }
+  .done__media img {
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-position: 70% 40%;
+  }
 }
 .done__body {
   padding: clamp(30px, 4vw, 52px) clamp(20px, 3.4vw, 34px);

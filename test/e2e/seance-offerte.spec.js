@@ -12,6 +12,13 @@ test.describe('page séance offerte', () => {
     await expect(page.locator('#formulaire')).toBeVisible();
   });
 
+  test('photo séance d’essai servie', async ({ request }) => {
+    const res = await request.get('/seance-essai-gratuite.png');
+    expect(res.ok()).toBeTruthy();
+    expect(res.headers()['content-type']).toMatch(/image\/png/);
+    expect(Number(res.headers()['content-length'] || 0)).toBeGreaterThan(10000);
+  });
+
   test('tracking ?src=flyer', async ({ page }) => {
     await page.goto('/?src=flyer&nu=1&dir=a');
     const src = await page.evaluate(() => window.dataLayer?.find((e) => e.event === 'bc_page_vue')?.source || null);
@@ -29,43 +36,7 @@ test.describe('page séance offerte', () => {
 
 async function fillPrincipal(page, { salle = 'Minimes', submit = true } = {}) {
   await page.goto('/?nu=1&dir=a&test=1&src=flyer');
-  const cta = page.getByRole('button', { name: /Je réserve ma séance/i }).first();
-  await cta.click();
-  await page.locator('#form').waitFor();
-
-  const salleBtn = page.locator('.step.is-on [data-pick="salle"]').filter({ hasText: salle }).first();
-  if (await salleBtn.count()) await salleBtn.click();
-  else await page.locator('.step.is-on [data-pick="salle"]').first().click();
-
-  await expect(page.locator('.step.is-on [data-pick="jour"]').first()).toBeVisible();
-  await page.locator('.step.is-on [data-pick="jour"]').first().click();
-
-  await expect(page.locator('.step.is-on [data-k="prenom"]')).toBeVisible();
-  await page.locator('.step.is-on [data-k="prenom"]').fill('Camille');
-  await page.locator('.step.is-on [data-k="nom"]').fill('Durand');
-  await page.locator('.step.is-on [data-next]').click();
-
-  await expect(page.locator('.step.is-on [data-k="email"]')).toBeVisible();
-  await page.locator('.step.is-on [data-k="email"]').fill('camille.e2e@example.com');
-  await page.locator('.step.is-on [data-k="tel"]').fill('0612345678');
-  await page.locator('.step.is-on [data-next]').click();
-
-  await expect(page.locator('.step.is-on [data-k="naissance"]')).toBeVisible();
-  await page.locator('.step.is-on [data-k="naissance"]').fill('1994-05-12');
-  await page.locator('.step.is-on [data-k="sexe"]').selectOption('F');
-  await page.locator('.step.is-on [data-next]').click();
-
-  await expect(page.locator('.step.is-on [data-k="adresse"]')).toBeVisible();
-  await page.locator('.step.is-on [data-k="adresse"]').fill('18 rue des Lilas');
-  await page.locator('.step.is-on [data-k="code_postal"]').fill('31000');
-  await page.locator('.step.is-on [data-k="ville"]').fill('Toulouse');
-  await page.locator('.step.is-on [data-k="rgpd"]').check();
-  if (!submit) return;
-  await page.locator('.step.is-on [data-next]').click();
-  await expect(page.locator('.step.is-on [data-ami]').first()).toBeVisible({ timeout: 15000 });
-}
-  await page.goto('/?nu=1&dir=a&test=1&src=flyer');
-  const cta = page.getByRole('button', { name: /Je réserve ma séance/i }).first();
+  const cta = page.locator('.hero [data-open-form]').first();
   await cta.click();
   await page.locator('#form').waitFor();
 
@@ -109,6 +80,10 @@ test.describe('tunnel inscription', () => {
     await page.locator('.step.is-on [data-ami="non"]').click();
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#done-h')).toContainText(/Camille/i);
+    await expect(page.locator('#done-recap')).toContainText(/non/i);
+    const photo = page.locator('#done-media img');
+    await expect(photo).toBeVisible();
+    await expect.poll(async () => photo.evaluate((img) => img.naturalWidth)).toBeGreaterThan(100);
   });
 
   test('prospect + ami sans naissance → défauts côté API', async ({ page }) => {
@@ -129,6 +104,12 @@ test.describe('tunnel inscription', () => {
     await expect(page.locator('#done-h')).toBeVisible({ timeout: 15000 });
     expect(payloads.at(-1)?.ami?.prenom).toBe('Alex');
     expect(payloads.at(-1)?.ami?.naissance || '').toBe('');
+    await expect(page.locator('#done-recap')).toContainText(/oui/i);
+    await expect(page.locator('#done-recap')).toContainText(/Alex/i);
+    const photo = page.locator('#done-media img');
+    await expect(photo).toBeVisible();
+    await expect(photo).toHaveAttribute('src', /seance-essai-gratuite/);
+    await expect.poll(async () => photo.evaluate((img) => img.naturalWidth)).toBeGreaterThan(100);
   });
 
   test('affiche une erreur si l’API échoue', async ({ page }) => {
