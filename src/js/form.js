@@ -40,8 +40,10 @@ const repris = relire();
 export const state = {
   salle: repris.salle, jour: repris.jour,
   prenom: "", nom: "", email: "", tel: "", naissance: "", sexe: "",
+  adresse: "", code_postal: "", ville: "",
   ami: null,        // null = pas répondu · false = seul · objet = à deux
   rgpd: false,
+  orderId: "",
   step: 0,
   maxStep: 0,
 };
@@ -70,7 +72,7 @@ const STEPS = [
   {
     id: "contact", kind: "champs",
     q: "Où on t'envoie la confirmation ?",
-    why: "Un email pour la confirmation, un numéro au cas où le planning bouge. On n'appelle pas pour vendre.",
+    why: "Un email pour ta confirmation. Un numéro au cas où le planning bouge. On n'appelle pas pour vendre.",
     fields: [
       { k: "email", l: "Email", t: "email", ac: "email", ph: "camille@exemple.fr" },
       { k: "tel", l: "Téléphone mobile", t: "tel", ac: "tel", ph: "06 12 34 56 78" },
@@ -78,8 +80,7 @@ const STEPS = [
   },
   {
     id: "fiche", kind: "champs",
-    q: "Deux dernières lignes pour ta fiche.",
-    // Les deux champs les plus coûteux, placés en dernier, avec leur raison affichée.
+    q: "Date de naissance et sexe, pour ta fiche.",
     why: "Demandés par le club pour <b>créer ta fiche et te couvrir pendant la séance</b>. Rien d'autre n'en est fait.",
     fields: [
       { k: "naissance", l: "Date de naissance", t: "date", ac: "bday" },
@@ -87,18 +88,31 @@ const STEPS = [
     ],
   },
   {
-    id: "ami", kind: "ami",
+    id: "adresse", kind: "champs", consent: true, submit: "principal",
+    q: "Ton adresse.",
+    why: "Obligatoire pour <b>ta fiche Deciplus</b> : rue, code postal et ville. Au clic, on crée ta fiche.",
+    fields: [
+      { k: "adresse", l: "Adresse", t: "text", ac: "street-address", ph: "12 rue des Lilas", wide: true },
+      { k: "code_postal", l: "Code postal", t: "text", ac: "postal-code", ph: "31000" },
+      { k: "ville", l: "Ville", t: "text", ac: "address-level2", ph: "Toulouse" },
+    ],
+  },
+  {
+    id: "ami", kind: "ami", submit: "ami",
     q: "Tu viens avec quelqu'un ?",
-    why: "Sa séance est offerte aussi. C'est la première raison pour laquelle on ne pousse jamais la porte d'une salle : ne pas vouloir y aller seul.",
+    why: "Ta fiche est en cours de création. Sa séance est offerte aussi — tu peux ajouter quelqu'un maintenant.",
   },
 ];
 
 const AMI_FIELDS = [
   ["a_prenom", "Son prénom", "text", "Alex", "prenom"],
   ["a_nom", "Son nom", "text", "Martin", "nom"],
-  ["a_email", "Son email", "email", "alex@exemple.fr", "email"],
+  ["a_email", "Son email (si tu le connais)", "email", "alex@exemple.fr", "email_ami"],
   ["a_tel", "Son mobile", "tel", "06 98 76 54 32", "tel"],
   ["a_naissance", "Sa date de naissance (si tu la connais)", "date", "", "naissance_ami"],
+  ["a_adresse", "Son adresse (si tu la connais)", "text", "12 rue des Lilas", "adresse_ami"],
+  ["a_cp", "Son code postal", "text", "31000", "cp_ami"],
+  ["a_ville", "Sa ville", "text", "Toulouse", "ville_ami"],
 ];
 
 const RX_MAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -111,8 +125,11 @@ function invalid(rule, val) {
     case "nom":
       return v.length < 2 ? "Il manque au moins deux lettres ici." : "";
     case "email":
-      return !v ? "On a besoin d'un email pour envoyer la confirmation."
+      return !v ? "On a besoin de ton email pour envoyer la confirmation."
         : !RX_MAIL.test(v) ? "Cet email n'a pas l'air valide — vérifie le @ et ce qui suit." : "";
+    case "email_ami":
+      if (!v) return "";
+      return RX_MAIL.test(v) ? "" : "Cet email n'a pas l'air valide — tu peux aussi le laisser vide.";
     case "tel":
       return !v ? "Un numéro de mobile, au cas où le planning change."
         : !RX_TEL.test(v) ? "Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78." : "";
@@ -128,6 +145,18 @@ function invalid(rule, val) {
     }
     case "sexe":
       return v ? "" : "Champ requis par la fiche du club.";
+    case "adresse":
+      return v.length < 3 ? "L'adresse (rue et numéro) est obligatoire pour ta fiche Deciplus." : "";
+    case "code_postal":
+      return /^\d{5}$/.test(v.replace(/\s/g, "")) ? "" : "Code postal français à 5 chiffres.";
+    case "ville":
+      return v.length < 2 ? "Indique ta ville." : "";
+    case "adresse_ami":
+    case "ville_ami":
+      return "";
+    case "cp_ami":
+      if (!v) return "";
+      return /^\d{5}$/.test(v.replace(/\s/g, "")) ? "" : "Code postal à 5 chiffres, ou laisse vide.";
     default:
       return "";
   }
@@ -151,7 +180,7 @@ function stepBody(st) {
   }
 
   if (st.kind === "champs") {
-    return `<div class="fields ${st.fields.length > 1 ? "fields--2" : ""}">${st.fields
+    const fields = `<div class="fields ${st.fields.length > 1 ? "fields--2" : ""}">${st.fields
       .map((f) => {
         const control =
           f.t === "select"
@@ -161,21 +190,31 @@ function stepBody(st) {
                </select>`
             : `<input type="${f.t}" data-k="${f.k}" value="${esc(state[f.k])}"
                  ${f.ac ? `autocomplete="${f.ac}"` : ""} ${f.ph ? `placeholder="${esc(f.ph)}"` : ""} />`;
-        return `<label class="field" data-f="${f.k}"><span>${esc(f.l)}</span>${control}<em class="field__err" role="alert"></em></label>`;
+        return `<label class="field${f.wide ? " field--wide" : ""}" data-f="${f.k}"><span>${esc(f.l)}</span>${control}<em class="field__err" role="alert"></em></label>`;
       })
       .join("")}</div>`;
+    const consent = st.consent
+      ? `<label class="consent" data-f="rgpd">
+      <input type="checkbox" data-k="rgpd"${state.rgpd ? " checked" : ""} />
+      <span>J'accepte que Boxing Center utilise ces informations pour ma séance d'essai et me recontacte à ce sujet. Je peux demander leur suppression à tout moment.</span>
+      <em class="field__err" role="alert"></em>
+    </label>`
+      : "";
+    return fields + consent;
   }
 
   const aDeux = state.ami && typeof state.ami === "object";
   return `
-    <div class="opts" role="group" aria-label="Venir accompagné">
+    <div class="opts opts--ami" role="group" aria-label="Venir accompagné" data-f="ami-choix">
       <button type="button" class="opt" data-ami="oui" aria-pressed="${aDeux}"><b>Oui, à deux</b><span>Sa séance est offerte</span></button>
       <button type="button" class="opt" data-ami="non" aria-pressed="${state.ami === false}"><b>Non, seul</b><span>Ça marche aussi</span></button>
+      <em class="field__err" role="alert"></em>
     </div>
     <div class="fields fields--2" id="ami-fields"${aDeux ? "" : " hidden"}>
+      <p class="step__why" style="grid-column:1/-1">Ses infos pour sa propre fiche. Adresse, code postal, ville et date de naissance : seulement si tu les as, sinon on mettra les valeurs par défaut.</p>
       ${AMI_FIELDS.map(
         ([k, l, t, ph]) =>
-          `<label class="field" data-f="${k}"><span>${esc(l)}</span><input type="${t}" data-k="${k}" ${ph ? `placeholder="${esc(ph)}"` : ""} value="${esc((state.ami && state.ami[k]) || "")}" /><em class="field__err" role="alert"></em></label>`
+          `<label class="field${k === "a_adresse" ? " field--wide" : ""}" data-f="${k}"><span>${esc(l)}</span><input type="${t}" data-k="${k}" ${ph ? `placeholder="${esc(ph)}"` : ""} value="${esc((state.ami && state.ami[k]) || "")}" /><em class="field__err" role="alert"></em></label>`
       ).join("")}
       <label class="field" data-f="a_sexe"><span>Son sexe</span>
         <select data-k="a_sexe"><option value="">Choisir…</option>
@@ -184,12 +223,7 @@ function stepBody(st) {
             .join("")}
         </select><em class="field__err" role="alert"></em></label>
       <p class="step__why" style="grid-column:1/-1">Sa salle et son jour reprennent les tiens. Vous pourrez les changer avec l'équipe sur place.</p>
-    </div>
-    <label class="consent" data-f="rgpd">
-      <input type="checkbox" data-k="rgpd"${state.rgpd ? " checked" : ""} />
-      <span>J'accepte que Boxing Center utilise ces informations pour ma séance d'essai et me recontacte à ce sujet. Je peux demander leur suppression à tout moment.</span>
-      <em class="field__err" role="alert"></em>
-    </label>`;
+    </div>`;
 }
 
 export function formHTML() {
@@ -199,6 +233,7 @@ export function formHTML() {
       <span class="form__count" id="form-count">Étape 1 sur ${STEPS.length}</span>
       <span class="form__pips" id="form-pips" aria-hidden="true">${STEPS.map(() => "<i></i>").join("")}</span>
     </div>
+    <p class="field__err form__api-err" id="form-api-err" hidden role="alert"></p>
     <form id="form" novalidate>
       ${STEPS.map(
         (st, i) => `
@@ -209,11 +244,10 @@ export function formHTML() {
           <div class="step__nav">
             ${i > 0 ? `<button type="button" class="back" data-back>← Retour</button>` : ""}
             <button type="button" class="btn btn--primary" data-next>
-              ${i === STEPS.length - 1 ? "Je valide ma séance" : "Continuer"}
+              ${st.id === "ami" ? "Je valide ma séance" : st.id === "adresse" ? "J'enregistre ma fiche" : "Continuer"}
               <span class="btn__arrow" aria-hidden="true"></span>
             </button>
           </div>
-          ${i === STEPS.length - 1 ? `<p class="field__err form__api-err" id="form-api-err" hidden role="alert"></p>` : ""}
         </section>`
       ).join("")}
 
@@ -300,16 +334,21 @@ export function mountForm(root, onChange) {
         showErr(f.k, msg);
         if (msg) ok = false;
       });
+      if (st.consent) {
+        const rgpdMsg = state.rgpd ? "" : "Coche cette case pour qu'on puisse enregistrer ton inscription.";
+        showErr("rgpd", rgpdMsg);
+        if (rgpdMsg) ok = false;
+      }
       return ok;
     }
 
-    // étape binôme + consentement
+    // étape binôme
     let ok = true;
-    const rgpdMsg = state.rgpd ? "" : "Coche cette case pour qu'on puisse enregistrer ton inscription.";
-    showErr("rgpd", rgpdMsg);
-    if (rgpdMsg) ok = false;
-
-    if (state.ami === null) return false;
+    if (state.ami === null) {
+      showErr("ami-choix", "Dis-nous si tu viens avec quelqu'un — oui ou non.");
+      return false;
+    }
+    showErr("ami-choix", "");
     if (state.ami === false) return ok;
 
     AMI_FIELDS.forEach(([k, , , , rule]) => {
@@ -328,20 +367,23 @@ export function mountForm(root, onChange) {
     const jour = JOURS.find((j) => j.id === state.jour);
     const prenom = (state.prenom || "").trim();
 
-    root.querySelector("#done-h").textContent = jour
-      ? `À ${jour.nom.toLowerCase()}, ${prenom}.`
-      : `À très vite, ${prenom}.`;
+    const amiPrenom = state.ami && typeof state.ami === "object" ? String(state.ami.a_prenom || "").trim() : "";
 
-    root.querySelector("#done-p").textContent =
-      `Ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}. ` +
-      `Présente-toi à l'accueil en tenue de sport : le matériel est prêté.` +
-      (state.ami && state.ami.a_prenom ? ` La séance de ${state.ami.a_prenom} est enregistrée aussi.` : "");
+    root.querySelector("#done-h").textContent = jour
+      ? (amiPrenom
+          ? `À ${jour.nom.toLowerCase()}, ${prenom} et ${amiPrenom}.`
+          : `À ${jour.nom.toLowerCase()}, ${prenom}.`)
+      : (amiPrenom ? `À très vite, ${prenom} et ${amiPrenom}.` : `À très vite, ${prenom}.`);
+
+    root.querySelector("#done-p").textContent = amiPrenom
+      ? `${prenom}, ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}, avec ${amiPrenom}. Présentez-vous à l'accueil en tenue de sport : le matériel est prêté. La séance de ${amiPrenom} est offerte aussi.`
+      : `Ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}. Présente-toi à l'accueil en tenue de sport : le matériel est prêté.`;
 
     root.querySelector("#done-recap").innerHTML = [
       ["Salle", esc(salle ? salle.nom : "—")],
       ["Jour prévu", esc(jour ? jour.nom : "—")],
       ["À régler sur place", "<b>0 €</b> — au lieu de 10 €"],
-      ["Accompagné", state.ami ? "oui, sa séance est offerte" : "non"],
+      ["Accompagné", amiPrenom ? `oui — ${esc(prenom)} et ${esc(amiPrenom)}` : "non"],
     ]
       .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
       .join("");
@@ -358,7 +400,7 @@ export function mountForm(root, onChange) {
     track("formulaire_valide", { salle: state.salle, jour: state.jour, ami: !!state.ami });
   };
 
-  const payloadFromState = () => {
+  const payloadFromState = (phase) => {
     const ami =
       state.ami && typeof state.ami === "object"
         ? {
@@ -368,9 +410,16 @@ export function mountForm(root, onChange) {
             tel: state.ami.a_tel || "",
             naissance: state.ami.a_naissance || "",
             sexe: state.ami.a_sexe || "",
+            address: state.ami.a_adresse || "",
+            postal_code: state.ami.a_cp || "",
+            city: state.ami.a_ville || "",
           }
         : null;
     const q = new URLSearchParams(location.search);
+    const dry = q.get("test") === "1" || q.get("dry_run") === "1";
+    if (phase === "ami") {
+      return { order_id: state.orderId, phase: "ami", ami, dry_run: dry };
+    }
     return {
       prenom: state.prenom,
       nom: state.nom,
@@ -378,27 +427,29 @@ export function mountForm(root, onChange) {
       tel: state.tel,
       naissance: state.naissance,
       sexe: state.sexe,
+      adresse: state.adresse,
+      code_postal: state.code_postal,
+      ville: state.ville,
       salle: state.salle,
       jour: state.jour,
       src: SOURCE,
       rgpd: state.rgpd,
-      ami,
-      dry_run: q.get("test") === "1" || q.get("dry_run") === "1",
+      dry_run: dry,
     };
   };
 
   const showApiErr = (msg) => {
-    const el = form.querySelector("#form-api-err");
+    const el = root.querySelector("#form-api-err");
     if (!el) return;
     el.hidden = !msg;
     el.textContent = msg || "";
   };
 
-  const submitInscription = async () => {
+  const submitInscription = async (phase) => {
     const res = await fetch("/api/inscrire", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(payloadFromState()),
+      body: JSON.stringify(payloadFromState(phase)),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.ok) {
@@ -428,7 +479,15 @@ export function mountForm(root, onChange) {
       state.ami = oui ? (typeof state.ami === "object" && state.ami) || {} : false;
       ami.parentElement.querySelectorAll(".opt").forEach((b) => b.setAttribute("aria-pressed", String(b === ami)));
       const box = form.querySelector("#ami-fields");
-      if (box) box.hidden = !oui;
+      if (box) {
+        box.hidden = !oui;
+        if (oui) {
+          box.scrollIntoView({ block: "center", behavior: prefersCalm() ? "auto" : "smooth" });
+          const first = box.querySelector("input, select");
+          if (first) setTimeout(() => first.focus({ preventScroll: true }), prefersCalm() ? 0 : 280);
+        }
+      }
+      showErr("ami-choix", "");
       if (!oui) AMI_FIELDS.forEach(([k]) => showErr(k, ""));
       thud();
       track(oui ? "ami_ajoute" : "ami_refuse");
@@ -444,11 +503,12 @@ export function mountForm(root, onChange) {
 
     if (e.target.closest("[data-next]")) {
       begin();
+      const st = STEPS[state.step];
       if (!validate()) {
         /* On emmène le visiteur sur la faute. Sans ça, cliquer « Continuer »
            ne produit rien de visible quand le champ en défaut est plus haut
            que l'écran — on croit que le bouton est cassé. */
-        const fautif = form.querySelector(".step.is-on .field.is-bad, .step.is-on .consent.is-bad");
+        const fautif = form.querySelector(".step.is-on .field.is-bad, .step.is-on .consent.is-bad, .step.is-on .opts.is-bad");
         if (fautif) {
           const champ = fautif.querySelector("input, select");
           fautif.scrollIntoView({ block: "center", behavior: prefersCalm() ? "auto" : "smooth" });
@@ -457,9 +517,16 @@ export function mountForm(root, onChange) {
         track("etape_bloquee", { etape: state.step + 1 });
         return;
       }
-      if (state.step === STEPS.length - 1) {
+      if (st.submit === "principal" || st.submit === "ami") {
         const btn = e.target.closest("[data-next]");
         if (btn?.dataset.busy === "1") return;
+        if (st.submit === "principal" && state.orderId) {
+          state.step += 1;
+          state.maxStep = Math.max(state.maxStep, state.step);
+          track("etape_atteinte", { etape: state.step + 1 });
+          paint();
+          return;
+        }
         const original = btn ? btn.innerHTML : "";
         if (btn) {
           btn.dataset.busy = "1";
@@ -467,21 +534,37 @@ export function mountForm(root, onChange) {
           btn.textContent = "Enregistrement…";
         }
         showApiErr("");
-        submitInscription()
-          .then(() => {
-            state.step = STEPS.length;
-            paint();
-            finish();
-          })
-          .catch((err) => {
-            showApiErr(err.message || "Échec de l'enregistrement.");
-            track("etape_bloquee", { etape: state.step + 1, erreur: "api" });
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = original;
-              delete btn.dataset.busy;
-            }
-          });
+        const work =
+          st.submit === "principal"
+            ? submitInscription("principal").then((data) => {
+                state.orderId = data.order_id || state.orderId;
+                if (btn) {
+                  btn.disabled = false;
+                  btn.innerHTML = original;
+                  delete btn.dataset.busy;
+                }
+                state.step += 1;
+                state.maxStep = Math.max(state.maxStep, state.step);
+                track("etape_atteinte", { etape: state.step + 1, fiche: "principal" });
+                paint();
+              })
+            : (state.ami && typeof state.ami === "object"
+                ? submitInscription("ami")
+                : Promise.resolve(null)
+              ).then(() => {
+                state.step = STEPS.length;
+                paint();
+                finish();
+              });
+        work.catch((err) => {
+          showApiErr(err.message || "Échec de l'enregistrement.");
+          track("etape_bloquee", { etape: state.step + 1, erreur: "api" });
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = original;
+            delete btn.dataset.busy;
+          }
+        });
         return;
       }
       state.step += 1;

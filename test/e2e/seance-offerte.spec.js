@@ -27,7 +27,7 @@ test.describe('page séance offerte', () => {
   }
 });
 
-async function fillPrincipal(page, { salle = 'Minimes' } = {}) {
+async function fillPrincipal(page, { salle = 'Minimes', submit = true } = {}) {
   await page.goto('/?nu=1&dir=a&test=1&src=flyer');
   const cta = page.getByRole('button', { name: /Je réserve ma séance/i }).first();
   await cta.click();
@@ -54,6 +54,51 @@ async function fillPrincipal(page, { salle = 'Minimes' } = {}) {
   await page.locator('.step.is-on [data-k="naissance"]').fill('1994-05-12');
   await page.locator('.step.is-on [data-k="sexe"]').selectOption('F');
   await page.locator('.step.is-on [data-next]').click();
+
+  await expect(page.locator('.step.is-on [data-k="adresse"]')).toBeVisible();
+  await page.locator('.step.is-on [data-k="adresse"]').fill('18 rue des Lilas');
+  await page.locator('.step.is-on [data-k="code_postal"]').fill('31000');
+  await page.locator('.step.is-on [data-k="ville"]').fill('Toulouse');
+  await page.locator('.step.is-on [data-k="rgpd"]').check();
+  if (!submit) return;
+  await page.locator('.step.is-on [data-next]').click();
+  await expect(page.locator('.step.is-on [data-ami]').first()).toBeVisible({ timeout: 15000 });
+}
+  await page.goto('/?nu=1&dir=a&test=1&src=flyer');
+  const cta = page.getByRole('button', { name: /Je réserve ma séance/i }).first();
+  await cta.click();
+  await page.locator('#form').waitFor();
+
+  const salleBtn = page.locator('.step.is-on [data-pick="salle"]').filter({ hasText: salle }).first();
+  if (await salleBtn.count()) await salleBtn.click();
+  else await page.locator('.step.is-on [data-pick="salle"]').first().click();
+
+  await expect(page.locator('.step.is-on [data-pick="jour"]').first()).toBeVisible();
+  await page.locator('.step.is-on [data-pick="jour"]').first().click();
+
+  await expect(page.locator('.step.is-on [data-k="prenom"]')).toBeVisible();
+  await page.locator('.step.is-on [data-k="prenom"]').fill('Camille');
+  await page.locator('.step.is-on [data-k="nom"]').fill('Durand');
+  await page.locator('.step.is-on [data-next]').click();
+
+  await expect(page.locator('.step.is-on [data-k="email"]')).toBeVisible();
+  await page.locator('.step.is-on [data-k="email"]').fill('camille.e2e@example.com');
+  await page.locator('.step.is-on [data-k="tel"]').fill('0612345678');
+  await page.locator('.step.is-on [data-next]').click();
+
+  await expect(page.locator('.step.is-on [data-k="naissance"]')).toBeVisible();
+  await page.locator('.step.is-on [data-k="naissance"]').fill('1994-05-12');
+  await page.locator('.step.is-on [data-k="sexe"]').selectOption('F');
+  await page.locator('.step.is-on [data-next]').click();
+
+  await expect(page.locator('.step.is-on [data-k="adresse"]')).toBeVisible();
+  await page.locator('.step.is-on [data-k="adresse"]').fill('18 rue des Lilas');
+  await page.locator('.step.is-on [data-k="code_postal"]').fill('31000');
+  await page.locator('.step.is-on [data-k="ville"]').fill('Toulouse');
+  await page.locator('.step.is-on [data-k="rgpd"]').check();
+  if (!submit) return;
+  await page.locator('.step.is-on [data-next]').click();
+  await expect(page.locator('.step.is-on [data-ami]').first()).toBeVisible({ timeout: 15000 });
 }
 
 test.describe('tunnel inscription', () => {
@@ -62,7 +107,6 @@ test.describe('tunnel inscription', () => {
   test('prospect seul jusqu’au succès', async ({ page }) => {
     await fillPrincipal(page);
     await page.locator('.step.is-on [data-ami="non"]').click();
-    await page.locator('.step.is-on [data-k="rgpd"]').check();
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#done-h')).toContainText(/Camille/i);
   });
@@ -81,7 +125,6 @@ test.describe('tunnel inscription', () => {
     await page.locator('.step.is-on [data-k="a_email"]').fill('alex.e2e@example.com');
     await page.locator('.step.is-on [data-k="a_tel"]').fill('0698765432');
     await page.locator('.step.is-on [data-k="a_sexe"]').selectOption('H');
-    await page.locator('.step.is-on [data-k="rgpd"]').check();
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#done-h')).toBeVisible({ timeout: 15000 });
     expect(payloads.at(-1)?.ami?.prenom).toBe('Alex');
@@ -96,9 +139,7 @@ test.describe('tunnel inscription', () => {
         body: JSON.stringify({ ok: false, error: 'Échec création fiche Deciplus. L’équipe a été prévenue.' }),
       });
     });
-    await fillPrincipal(page);
-    await page.locator('.step.is-on [data-ami="non"]').click();
-    await page.locator('.step.is-on [data-k="rgpd"]').check();
+    await fillPrincipal(page, { submit: false });
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#form-api-err')).toBeVisible({ timeout: 8000 });
     await expect(page.locator('#form-api-err')).toContainText(/Deciplus|enregistrer|Échec/i);

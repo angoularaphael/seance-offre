@@ -5,6 +5,11 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "assets/**"
+    }
+  },
   "crons": [
     {
       "path": "/api/cron-relances",

@@ -65,6 +65,10 @@
 
 /* — tuiles de choix : grandes, sans frappe — */
 .opts { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); }
+.opts--ami { grid-template-columns: 1fr 1fr; }
+.opts--ami .field__err { grid-column: 1 / -1; }
+.opts--ami .field__err:empty { display: none; }
+.opts--ami.is-bad .opt { border-color: var(--rouge); }
 .opts--days { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
 /* 168 px de minimum ne tenaient pas en deux colonnes une fois retirées les
    marges du formulaire : les cinq salles s'empilaient sur 890 px de
@@ -127,6 +131,13 @@
 /* — champs — */
 .fields { display: grid; gap: 16px; }
 @media (min-width: 620px) { .fields--2 { grid-template-columns: 1fr 1fr; } }
+.field--wide { grid-column: 1 / -1; }
+#ami-fields {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
 .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .field > span {
   font-family: var(--f-mono); font-size: var(--fs-micro);

@@ -1,13 +1,17 @@
 import '../lib/load-env.js';
 import {
   buildDeciplusJobs,
+  buildFriendJob,
   errorMessage,
   isDryRunRequest,
+  jobPublicView,
+  validateAmiOnly,
   validateInscription,
 } from '../lib/inscription.js';
 import { forwardJobs } from '../lib/bot.js';
 import { sendConfirmationEmails, sendInternalNotification } from '../lib/email.js';
-import { saveLead } from '../lib/leads.js';
+import { getGym } from '../lib/gyms.js';
+import { getLead, saveLead } from '../lib/leads.js';
 
 function queryFromUrl(req) {
   try {
@@ -35,6 +39,92 @@ async function readBody(req) {
   return JSON.parse(raw);
 }
 
+async function handleAmiPhase(res, body, dryRun) {
+  const orderId = String(body.order_id || '').trim();
+  const lead = await getLead(orderId);
+  if (!lead) {
+    json(res, 404, { ok: false, error: 'Inscription introuvable. Repars du début du formulaire.' });
+    return;
+  }
+
+  const parsedAmi = validateAmiOnly(body.ami);
+  if (!parsedAmi.ok) {
+    json(res, 400, {
+      ok: false,
+      error: errorMessage(parsedAmi.errors) || 'Infos de l’ami(e) incomplètes.',
+      errors: parsedAmi.errors,
+    });
+    return;
+  }
+
+  const gym = getGym(lead.salle);
+  const data = {
+    prenom: lead.prenom,
+    nom: lead.nom,
+    email: lead.email,
+    tel: lead.tel,
+    naissance: lead.naissance,
+    sexe: lead.sexe,
+    salle: lead.salle,
+    gym,
+    jour: lead.jour,
+    jour_nom: lead.jour_nom,
+    visit_date: lead.visit_date,
+    src: lead.src,
+    ami: parsedAmi.friend,
+  };
+  const friendJob = buildFriendJob(data, { orderId });
+  const already = Array.isArray(lead.jobs) && lead.jobs.includes(friendJob.order_id);
+  let botResults = [];
+
+  if (!already && !dryRun) {
+    try {
+      botResults = await forwardJobs([friendJob]);
+    } catch (err) {
+      lead.status = 'error';
+      lead.last_error = err.message;
+      await saveLead(lead).catch(() => {});
+      await sendInternalNotification(data, { orderId, error: err.message }).catch(() => {});
+      json(res, 502, {
+        ok: false,
+        error: 'Échec création fiche ami(e) Deciplus. L’équipe a été prévenue.',
+        order_id: orderId,
+      });
+      return;
+    }
+  }
+
+  lead.ami = parsedAmi.friend;
+  lead.jobs = [...new Set([...(lead.jobs || []), friendJob.order_id])];
+  lead.status = dryRun ? 'dry_run' : 'queued';
+  lead.last_error = null;
+  await saveLead(lead);
+
+  const emails = already
+    ? [{ sent: false, reason: 'already_created' }]
+    : await sendConfirmationEmails(data, { dryRun, onlyAmi: true }).catch((err) => [
+        { sent: false, error: err.message },
+      ]);
+
+  console.info('[seance-offerte] ami', {
+    order_id: orderId,
+    dry_run: dryRun,
+    already,
+  });
+
+  json(res, 200, {
+    ok: true,
+    order_id: orderId,
+    dry_run: dryRun,
+    phase: 'ami',
+    fiches: lead.jobs.length,
+    jobs: [jobPublicView(friendJob)],
+    visit_date: lead.visit_date,
+    bot: botResults,
+    emails,
+  });
+}
+
 export async function handleInscrire(req, res) {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -60,6 +150,11 @@ export async function handleInscrire(req, res) {
     body,
   });
 
+  if (body.order_id && (body.phase === 'ami' || body.ami)) {
+    await handleAmiPhase(res, body, dryRun);
+    return;
+  }
+
   const parsed = validateInscription(body);
   if (!parsed.ok) {
     json(res, 400, {
@@ -79,6 +174,9 @@ export async function handleInscrire(req, res) {
     tel: parsed.data.tel,
     naissance: parsed.data.naissance,
     sexe: parsed.data.sexe,
+    adresse: parsed.data.adresse,
+    code_postal: parsed.data.code_postal,
+    ville: parsed.data.ville,
     salle: parsed.data.salle,
     salle_label: parsed.data.gym.label,
     jour: parsed.data.jour,
@@ -140,17 +238,7 @@ export async function handleInscrire(req, res) {
     order_id: orderId,
     dry_run: dryRun,
     fiches: jobs.length,
-    jobs: jobs.map((j) => ({
-      order_id: j.order_id,
-      is_friend_referral: j.is_friend_referral,
-      birthdate: j.customer.birthdate,
-      address: j.customer.address,
-      postal_code: j.customer.postal_code,
-      city: j.customer.city,
-      sale_type: j.sale_type,
-      create_sale: j.create_sale,
-      info_compta: j.info_compta,
-    })),
+    jobs: jobs.map(jobPublicView),
     visit_date: parsed.data.visit_date,
     bot: botResults,
     emails,

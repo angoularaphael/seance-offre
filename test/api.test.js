@@ -42,6 +42,9 @@ const valid = {
   tel: '0612345678',
   naissance: '1994-05-12',
   sexe: 'F',
+  adresse: '18 rue des Lilas',
+  code_postal: '31000',
+  ville: 'Toulouse',
   salle: 'minimes',
   jour: 'mardi',
   rgpd: true,
@@ -63,7 +66,7 @@ describe('POST /api/inscrire', () => {
     assert.ok(Array.isArray(res.body.errors));
   });
 
-  it('200 dry-run : 1 fiche, adresse salle, pas de vente', async () => {
+  it('200 dry-run : 1 fiche, adresse prospect, photo, pas de vente', async () => {
     const res = mockRes();
     await handleInscrire(mockReq(valid), res);
     assert.equal(res.statusCode, 200, JSON.stringify(res.body));
@@ -72,8 +75,11 @@ describe('POST /api/inscrire', () => {
     assert.equal(res.body.fiches, 1);
     assert.equal(res.body.jobs[0].sale_type, 'none');
     assert.equal(res.body.jobs[0].create_sale, false);
-    assert.equal(res.body.jobs[0].address, '12 rue de Fenouillet');
+    assert.equal(res.body.jobs[0].address, '18 rue des Lilas');
+    assert.equal(res.body.jobs[0].postal_code, '31000');
+    assert.equal(res.body.jobs[0].city, 'Toulouse');
     assert.equal(res.body.jobs[0].info_compta, 'SEANCE D ESSAI GRATUITE WEB');
+    assert.equal(res.body.jobs[0].has_photo, true);
   });
 
   it('200 dry-run + ami sans naissance : 2 fiches, Grand Ramier, 01/01/2000', async () => {
@@ -100,5 +106,37 @@ describe('POST /api/inscrire', () => {
     assert.equal(ami.postal_code, '31400');
     assert.equal(ami.city, 'Toulouse');
     assert.equal(ami.sale_type, 'none');
+    assert.equal(ami.has_photo, true);
+  });
+
+  it('phase ami : 2e fiche après le prospect, adresse ami si fournie', async () => {
+    const first = mockRes();
+    await handleInscrire(mockReq(valid), first);
+    assert.equal(first.statusCode, 200, JSON.stringify(first.body));
+    const orderId = first.body.order_id;
+    const second = mockRes();
+    await handleInscrire(
+      mockReq({
+        order_id: orderId,
+        phase: 'ami',
+        ami: {
+          prenom: 'Alex',
+          nom: 'Martin',
+          email: 'alex@example.com',
+          tel: '0698765432',
+          sexe: 'H',
+          address: '7 allée des Tests',
+          postal_code: '31200',
+          city: 'Toulouse',
+        },
+      }),
+      second
+    );
+    assert.equal(second.statusCode, 200, JSON.stringify(second.body));
+    assert.equal(second.body.phase, 'ami');
+    assert.equal(second.body.jobs[0].is_friend_referral, true);
+    assert.equal(second.body.jobs[0].address, '7 allée des Tests');
+    assert.equal(second.body.jobs[0].postal_code, '31200');
+    assert.equal(second.body.jobs[0].has_photo, true);
   });
 });

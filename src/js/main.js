@@ -560,9 +560,16 @@ function closePoster() {
    ============================================================ */
 
 function openForm(withFriend) {
-  skipKnownSteps(app);
+  if (withFriend) {
+    state.ami = typeof state.ami === "object" && state.ami ? state.ami : {};
+    document.querySelectorAll("[data-ami]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.ami === "oui"));
+    });
+    const box = document.querySelector("#ami-fields");
+    if (box) box.hidden = false;
+  }
+  skipKnownSteps();
   scrollTo(document.getElementById("inscription"));
-  if (withFriend) setTimeout(() => document.querySelector('[data-ami="oui"]')?.click(), 620);
   track("cta_clic", { avec_ami: !!withFriend });
 }
 
