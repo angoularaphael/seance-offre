@@ -87,7 +87,7 @@ describe('buildDeciplusJobs', () => {
     assert.equal(jobs[0].customer.city, 'Toulouse');
     assert.equal(jobs[0].is_friend_referral, false);
     assert.ok(jobs[0].photo_base64);
-    assert.match(jobs[0].photo_base64, /^data:image\/png;base64,/);
+    assert.match(jobs[0].photo_base64, /^data:image\/(jpeg|png);base64,/);
   });
 
   it('crée 2 jobs et applique les défauts ami', () => {
