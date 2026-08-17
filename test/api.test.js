@@ -80,6 +80,7 @@ describe('POST /api/inscrire', () => {
     assert.equal(res.body.jobs[0].city, 'Toulouse');
     assert.equal(res.body.jobs[0].info_compta, 'SEANCE D ESSAI GRATUITE WEB');
     assert.equal(res.body.jobs[0].has_photo, true);
+    assert.equal(res.body.emails.deferred, true);
   });
 
   it('200 dry-run + ami sans naissance : 2 fiches, Grand Ramier, 01/01/2000', async () => {
@@ -138,5 +139,17 @@ describe('POST /api/inscrire', () => {
     assert.equal(second.body.jobs[0].address, '7 allée des Tests');
     assert.equal(second.body.jobs[0].postal_code, '31200');
     assert.equal(second.body.jobs[0].has_photo, true);
+  });
+
+  it('phase terminer : pas de 2e fiche, mail prospect seul', async () => {
+    const first = mockRes();
+    await handleInscrire(mockReq(valid), first);
+    assert.equal(first.body.emails.deferred, true);
+    const second = mockRes();
+    await handleInscrire(mockReq({ order_id: first.body.order_id, phase: 'terminer' }), second);
+    assert.equal(second.statusCode, 200, JSON.stringify(second.body));
+    assert.equal(second.body.phase, 'terminer');
+    assert.equal(second.body.emails.reason, 'dry_run');
+    assert.ok(!String(second.body.emails.preview || '').includes('et Alex'));
   });
 });

@@ -433,6 +433,9 @@ export function mountForm(root, onChange) {
     if (phase === "ami") {
       return { order_id: state.orderId, phase: "ami", ami, dry_run: dry };
     }
+    if (phase === "terminer") {
+      return { order_id: state.orderId, phase: "terminer", dry_run: dry };
+    }
     return {
       prenom: state.prenom,
       nom: state.nom,
@@ -562,13 +565,10 @@ export function mountForm(root, onChange) {
                 track("etape_atteinte", { etape: state.step + 1, fiche: "principal" });
                 paint();
               })
-            : (isADeux()
-                ? submitInscription("ami").then((data) => {
-                    state.vientADeux = true;
-                    return data;
-                  })
-                : Promise.resolve(null)
-              ).then(() => {
+            : submitInscription(isADeux() ? "ami" : "terminer").then((data) => {
+                if (isADeux()) state.vientADeux = true;
+                return data;
+              }).then(() => {
                 state.step = STEPS.length;
                 paint();
                 finish();

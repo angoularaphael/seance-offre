@@ -39,6 +39,55 @@ async function readBody(req) {
   return JSON.parse(raw);
 }
 
+function emailDataFromLead(lead, { ami = null, ami_pending = false } = {}) {
+  const gym = getGym(lead.salle);
+  return {
+    prenom: lead.prenom,
+    nom: lead.nom,
+    email: lead.email,
+    tel: lead.tel,
+    naissance: lead.naissance,
+    sexe: lead.sexe,
+    adresse: lead.adresse,
+    code_postal: lead.code_postal,
+    ville: lead.ville,
+    salle: lead.salle,
+    gym,
+    salle_label: lead.salle_label || gym?.label,
+    jour: lead.jour,
+    jour_nom: lead.jour_nom,
+    visit_date: lead.visit_date,
+    src: lead.src,
+    ami,
+    ami_pending,
+  };
+}
+
+async function handleFinishPhase(res, body, dryRun) {
+  const orderId = String(body.order_id || '').trim();
+  const lead = await getLead(orderId);
+  if (!lead) {
+    json(res, 404, { ok: false, error: 'Inscription introuvable. Repars du début du formulaire.' });
+    return;
+  }
+
+  const data = emailDataFromLead(lead, { ami: null, ami_pending: false });
+  const emails = await sendConfirmationEmails(data, { dryRun }).catch((err) => [
+    { sent: false, error: err.message },
+  ]);
+  lead.status = dryRun ? 'dry_run' : 'confirmed';
+  lead.ami = null;
+  await saveLead(lead);
+
+  json(res, 200, {
+    ok: true,
+    order_id: orderId,
+    dry_run: dryRun,
+    phase: 'terminer',
+    emails,
+  });
+}
+
 async function handleAmiPhase(res, body, dryRun) {
   const orderId = String(body.order_id || '').trim();
   const lead = await getLead(orderId);
@@ -57,22 +106,7 @@ async function handleAmiPhase(res, body, dryRun) {
     return;
   }
 
-  const gym = getGym(lead.salle);
-  const data = {
-    prenom: lead.prenom,
-    nom: lead.nom,
-    email: lead.email,
-    tel: lead.tel,
-    naissance: lead.naissance,
-    sexe: lead.sexe,
-    salle: lead.salle,
-    gym,
-    jour: lead.jour,
-    jour_nom: lead.jour_nom,
-    visit_date: lead.visit_date,
-    src: lead.src,
-    ami: parsedAmi.friend,
-  };
+  const data = emailDataFromLead(lead, { ami: parsedAmi.friend });
   const friendJob = buildFriendJob(data, { orderId });
   const already = Array.isArray(lead.jobs) && lead.jobs.includes(friendJob.order_id);
   let botResults = [];
@@ -102,9 +136,12 @@ async function handleAmiPhase(res, body, dryRun) {
 
   const emails = already
     ? [{ sent: false, reason: 'already_created' }]
-    : await sendConfirmationEmails(data, { dryRun, onlyAmi: true }).catch((err) => [
+    : await sendConfirmationEmails(data, { dryRun }).catch((err) => [
         { sent: false, error: err.message },
       ]);
+  if (!already) {
+    await sendInternalNotification(data, { orderId, dryRun }).catch(() => {});
+  }
 
   console.info('[seance-offerte] ami', {
     order_id: orderId,
@@ -150,6 +187,10 @@ export async function handleInscrire(req, res) {
     body,
   });
 
+  if (body.order_id && body.phase === 'terminer') {
+    await handleFinishPhase(res, body, dryRun);
+    return;
+  }
   if (body.order_id && (body.phase === 'ami' || body.ami)) {
     await handleAmiPhase(res, body, dryRun);
     return;
@@ -217,10 +258,11 @@ export async function handleInscrire(req, res) {
     }
   }
 
-  const emails = await sendConfirmationEmails(parsed.data, { dryRun }).catch((err) => [
-    { sent: false, error: err.message },
-  ]);
-  const internal = await sendInternalNotification(parsed.data, { orderId, dryRun }).catch((err) => ({
+  const emails = { deferred: true };
+  const internal = await sendInternalNotification(
+    { ...parsed.data, ami_pending: true },
+    { orderId, dryRun }
+  ).catch((err) => ({
     sent: false,
     error: err.message,
   }));
