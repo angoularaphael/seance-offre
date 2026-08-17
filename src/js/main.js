@@ -10,7 +10,7 @@ import {
 } from "./data.js";
 import AFFICHES from "../plannings-manifest.json";
 import { esc, pic, scrollTo, lignes, fr } from "./ui.js";
-import { formHTML, mountForm, skipKnownSteps, state, retenirChoix } from "./form.js";
+import { formHTML, mountForm, skipKnownSteps, state, retenirChoix, isADeux } from "./form.js";
 import { track, PASS_NO } from "./track.js";
 import { mountReveal, mountImages } from "./reveal.js";
 import { mountLight, unmountLight, strikeLight } from "./light.js";
@@ -410,7 +410,7 @@ function sync() {
     salle: salle ? "Boxing Center " + salle.nom : "",
     jour: jour ? jour.nom : "",
     nom,
-    ami: state.ami === null ? "" : state.ami ? "oui — offerte" : "non",
+    ami: isADeux() ? "oui — offerte" : state.vientADeux === false || state.ami === false ? "non" : "",
   };
   document.querySelectorAll("[data-pass]").forEach((el) => {
     const v = vals[el.dataset.pass];
@@ -544,6 +544,7 @@ function closePoster() {
 
 function openForm(withFriend) {
   if (withFriend) {
+    state.vientADeux = true;
     state.ami = typeof state.ami === "object" && state.ami ? state.ami : {};
     document.querySelectorAll("[data-ami]").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.ami === "oui"));

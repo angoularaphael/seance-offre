@@ -41,11 +41,18 @@ export const state = {
   prenom: "", nom: "", email: "", tel: "", naissance: "", sexe: "",
   adresse: "", code_postal: "", ville: "",
   ami: null,        // null = pas répondu · false = seul · objet = à deux
+  vientADeux: null, // true = « Oui, à deux » · false = « Non, seul »
   rgpd: false,
   orderId: "",
   step: 0,
   maxStep: 0,
 };
+
+export function isADeux() {
+  if (state.vientADeux === false || state.ami === false) return false;
+  if (state.vientADeux === true) return true;
+  return Boolean(state.ami && typeof state.ami === "object");
+}
 
 const STEPS = [
   {
@@ -202,11 +209,11 @@ function stepBody(st) {
     return fields + consent;
   }
 
-  const aDeux = state.ami && typeof state.ami === "object";
+  const aDeux = isADeux();
   return `
     <div class="opts opts--ami" role="group" aria-label="Venir accompagné" data-f="ami-choix">
       <button type="button" class="opt" data-ami="oui" aria-pressed="${aDeux}"><b>Oui, à deux</b><span>Sa séance est offerte</span></button>
-      <button type="button" class="opt" data-ami="non" aria-pressed="${state.ami === false}"><b>Non, seul</b><span>Ça marche aussi</span></button>
+      <button type="button" class="opt" data-ami="non" aria-pressed="${state.vientADeux === false || state.ami === false}"><b>Non, seul</b><span>Ça marche aussi</span></button>
       <em class="field__err" role="alert"></em>
     </div>
     <div class="fields fields--2" id="ami-fields"${aDeux ? "" : " hidden"}>
@@ -297,6 +304,13 @@ export function mountForm(root, onChange) {
     });
     count.textContent =
       state.step >= STEPS.length ? "Séance réservée" : `Étape ${state.step + 1} sur ${STEPS.length}`;
+    const aDeux = isADeux();
+    const ouiBtn = form.querySelector('[data-ami="oui"]');
+    const nonBtn = form.querySelector('[data-ami="non"]');
+    if (ouiBtn) ouiBtn.setAttribute("aria-pressed", String(aDeux));
+    if (nonBtn) nonBtn.setAttribute("aria-pressed", String(state.vientADeux === false || state.ami === false));
+    const box = form.querySelector("#ami-fields");
+    if (box) box.hidden = !aDeux;
     onChange && onChange(state);
   };
 
@@ -346,12 +360,13 @@ export function mountForm(root, onChange) {
     // étape binôme
     syncAmiFromDom(form);
     let ok = true;
-    if (state.ami === null) {
+    if (state.vientADeux === null && state.ami === null) {
       showErr("ami-choix", "Dis-nous si tu viens avec quelqu'un — oui ou non.");
       return false;
     }
     showErr("ami-choix", "");
-    if (state.ami === false) return ok;
+    if (!isADeux()) return ok;
+    if (typeof state.ami !== "object" || !state.ami) state.ami = {};
 
     AMI_FIELDS.forEach(([k, , , , rule]) => {
       const msg = invalid(rule, state.ami[k]);
@@ -370,9 +385,10 @@ export function mountForm(root, onChange) {
     const jour = JOURS.find((j) => j.id === state.jour);
     const prenom = (state.prenom || "").trim();
 
-    const aDeux = Boolean(state.ami && typeof state.ami === "object");
-    const amiPrenom = aDeux ? String(state.ami.a_prenom || "").trim() : "";
-    const amiNom = aDeux ? [amiPrenom, String(state.ami.a_nom || "").trim()].filter(Boolean).join(" ") : "";
+    const pressedOui = form.querySelector('[data-ami="oui"]')?.getAttribute("aria-pressed") === "true";
+    const aDeux = isADeux() || pressedOui;
+    const amiPrenom = aDeux ? String((state.ami && state.ami.a_prenom) || "").trim() : "";
+    const amiNom = aDeux ? [amiPrenom, String((state.ami && state.ami.a_nom) || "").trim()].filter(Boolean).join(" ") : "";
 
     root.querySelector("#done-h").textContent = jour
       ? (amiPrenom
@@ -388,7 +404,7 @@ export function mountForm(root, onChange) {
       ["Salle", esc(salle ? salle.nom : "—")],
       ["Jour prévu", esc(jour ? jour.nom : "—")],
       ["À régler sur place", "<b>0 €</b> — au lieu de 10 €"],
-      ["Accompagné", aDeux ? (amiNom ? `oui — ${esc(prenom)} et ${esc(amiNom)}` : "oui") : "non"],
+      ["Accompagné", aDeux ? (amiNom ? `oui — ${esc(prenom)} et ${esc(amiNom)}` : "oui — à deux") : "non"],
     ]
       .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
       .join("");
@@ -399,7 +415,7 @@ export function mountForm(root, onChange) {
   const payloadFromState = (phase) => {
     syncAmiFromDom(form);
     const ami =
-      state.ami && typeof state.ami === "object"
+      isADeux() && state.ami && typeof state.ami === "object"
         ? {
             prenom: state.ami.a_prenom || "",
             nom: state.ami.a_nom || "",
@@ -473,6 +489,7 @@ export function mountForm(root, onChange) {
     if (ami) {
       begin();
       const oui = ami.dataset.ami === "oui";
+      state.vientADeux = oui;
       state.ami = oui ? (typeof state.ami === "object" && state.ami) || {} : false;
       ami.parentElement.querySelectorAll(".opt").forEach((b) => b.setAttribute("aria-pressed", String(b === ami)));
       const box = form.querySelector("#ami-fields");
@@ -545,8 +562,11 @@ export function mountForm(root, onChange) {
                 track("etape_atteinte", { etape: state.step + 1, fiche: "principal" });
                 paint();
               })
-            : (state.ami && typeof state.ami === "object"
-                ? submitInscription("ami")
+            : (isADeux()
+                ? submitInscription("ami").then((data) => {
+                    state.vientADeux = true;
+                    return data;
+                  })
                 : Promise.resolve(null)
               ).then(() => {
                 state.step = STEPS.length;
@@ -580,6 +600,8 @@ export function mountForm(root, onChange) {
     begin();
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     if (k.startsWith("a_")) {
+      if (state.vientADeux === false) return;
+      state.vientADeux = true;
       if (typeof state.ami !== "object" || !state.ami) state.ami = {};
       state.ami[k] = val;
     } else {

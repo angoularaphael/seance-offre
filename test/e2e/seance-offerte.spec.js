@@ -81,6 +81,7 @@ test.describe('tunnel inscription', () => {
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#done-h')).toContainText(/Camille/i);
     await expect(page.locator('#done-recap')).toContainText(/non/i);
+    await expect(page.locator('#done-recap dd').nth(3)).toHaveText(/non/i);
     const photo = page.locator('#done-media img');
     await expect(photo).toBeVisible();
     await expect.poll(async () => photo.evaluate((img) => img.naturalWidth)).toBeGreaterThan(100);
@@ -104,7 +105,7 @@ test.describe('tunnel inscription', () => {
     await expect(page.locator('#done-h')).toBeVisible({ timeout: 15000 });
     expect(payloads.at(-1)?.ami?.prenom).toBe('Alex');
     expect(payloads.at(-1)?.ami?.naissance || '').toBe('');
-    await expect(page.locator('#done-recap')).toContainText(/oui/i);
+    await expect(page.locator('#done-recap dd').nth(3)).toContainText(/oui/i);
     await expect(page.locator('#done-recap')).toContainText(/Alex/i);
     const photo = page.locator('#done-media img');
     await expect(photo).toBeVisible();
