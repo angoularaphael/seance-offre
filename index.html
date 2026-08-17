@@ -26,9 +26,10 @@
 <meta property="og:image:alt" content="Un coach Boxing Center accompagne une adhérente au sac. Séance d'essai à 0 € au lieu de 10 €." />
 <meta name="twitter:card" content="summary_large_image" />
 
-<link rel="icon" href="/favicon-32.png" sizes="32x32" />
-<link rel="icon" href="/icon-192.png" sizes="192x192" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" href="/favicon-192.png" />
 
 <!-- L'image du héros est l'élément le plus grand du premier écran : sans
      préchargement, le navigateur ne la découvre qu'après avoir exécuté le
@@ -59,18 +60,6 @@
        pouvoir se lire en grand sans quitter la page. -->
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Planning en grand" hidden></div>
   <div id="rail-slot"></div>
-
-  <!-- Outils de maquette : retirés en production -->
-  <aside class="tools" aria-label="Outils de maquette">
-    <span class="tools__lab">Direction</span>
-    <div role="radiogroup" aria-label="Direction artistique" style="display:flex;gap:4px">
-      <button type="button" class="tools__b" role="radio" data-set-dir="a" aria-checked="true" title="A — Le coin">A</button>
-      <button type="button" class="tools__b" role="radio" data-set-dir="b" aria-checked="false" title="B — Le laissez-passer">B</button>
-      <button type="button" class="tools__b" role="radio" data-set-dir="c" aria-checked="false" title="C — La première fois">C</button>
-    </div>
-    <span class="tools__sep" aria-hidden="true"></span>
-    <button type="button" class="tools__b" data-sound aria-pressed="false" title="Cloche de fin de round (désactivée par défaut)">♪̸</button>
-  </aside>
 
   <main id="app"></main>
 

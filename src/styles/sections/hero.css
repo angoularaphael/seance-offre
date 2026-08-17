@@ -40,15 +40,6 @@
   width: clamp(122px, 13vw, 176px); height: auto;
   filter: drop-shadow(0 2px 14px rgb(0 0 0 / 0.55));
 }
-.hero__src {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--f-mono); font-size: var(--fs-micro);
-  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3);
-}
-.hero__src::before {
-  content: ""; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--rouge); flex: none;
-}
 
 /* — corps — */
 .hero__body {
@@ -255,10 +246,6 @@ html.settled .hero h1 .underline::after { transform: scaleX(1) !important; trans
 @media (max-height: 820px) and (min-width: 761px) {
   .hero__proof { display: none; }
 }
-
-
-/* Mode propre : la mention de source disparaît avec les autres outils. */
-html.nu .hero__src { display: none; }
 
 
 /* ------------------------------------------------------------

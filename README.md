@@ -1,9 +1,7 @@
 # Séance d'essai offerte — Boxing Center
 
 Page de conversion pour l'opération « séance d'essai offerte ».
-**Un seul moteur de conversion, trois directions artistiques** en bascule live.
-
-Direction retenue par le coach : **A — Le coin.**
+Direction livrée : **A — Le coin.**
 
 ---
 
@@ -34,23 +32,15 @@ Sort dans `dist/` — HTML, CSS et JS statiques, rien d'autre. Prêt pour Vercel
 (`vercel.json` fournit déjà la commande de build, les en-têtes de cache et le
 `X-Robots-Tag: noindex`).
 
-## Changer de direction
+## Direction
 
-| | |
-|---|---|
-| Sélecteur | en haut à droite |
-| Clavier | **1** Le coin · **2** Le laissez-passer · **3** La première fois |
-| URL | `?dir=a` · `?dir=b` · `?dir=c` |
-| **Mode propre** | `?nu=1` — retire le sélecteur et le bouton son. C'est la page telle qu'elle sera en ligne, à montrer au client. |
+Page livrée en **A — Le coin**. Le sélecteur de maquette (A / B / C) et le libellé de source (« Accès direct ») ne sont plus affichés. Le traçage `?src=` reste actif, sans pastille à l'écran.
 
-Le choix est mémorisé. Le bouton **♪** active la cloche de fin de round
-(désactivée par défaut — « sons opt-in uniquement »). Le sélecteur et le son
-sont des outils de maquette : ils disparaissent en production.
+La cloche de fin de round reste désactivée par défaut.
 
 ## Tester le traçage des sources (§18)
 
-Chaque QR imprimé portera son paramètre. La page l'affiche en haut à droite et
-l'imprime sur le laissez-passer sous forme de numéro de série.
+Chaque QR imprimé portera son paramètre. La source est mémorisée pour la session et suit le lead ; elle n'est plus affichée sur la page.
 
 ```bash
 start "" "http://localhost:5610/?src=flyer&dir=a"

@@ -1,7 +1,6 @@
 /* ============================================================
    MONTAGE DE LA PAGE
-   Un seul moteur de conversion, trois habillages.
-   Direction : sélecteur, touches 1 / 2 / 3, ou ?dir=a|b|c
+   Un seul moteur de conversion. Direction livrée : A — Le coin.
    ============================================================ */
 
 import "../styles/index.css";
@@ -12,21 +11,14 @@ import {
 import AFFICHES from "../plannings-manifest.json";
 import { esc, pic, scrollTo, lignes, fr } from "./ui.js";
 import { formHTML, mountForm, skipKnownSteps, state, retenirChoix } from "./form.js";
-import { track, SOURCE_LABEL, PASS_NO } from "./track.js";
+import { track, PASS_NO } from "./track.js";
 import { mountReveal, mountImages } from "./reveal.js";
 import { mountLight, unmountLight, strikeLight } from "./light.js";
 import { mountRounds, unmountRounds } from "./rounds.js";
-import { setSound, restoreSound, isOn } from "./audio.js";
+import { setSound, restoreSound } from "./audio.js";
 
 const app = document.getElementById("app");
 const dock = document.getElementById("dock");
-const DIRS = ["a", "b", "c"];
-
-/* Mode propre : `?nu=1` retire le sélecteur de direction et le bouton son.
-   C'est la page telle qu'elle sera en ligne — de quoi la montrer au client
-   sans lui expliquer que ces boutons n'existeront pas. */
-const NU = new URLSearchParams(location.search).get("nu") === "1";
-if (NU) document.documentElement.classList.add("nu");
 
 /* ============================================================
    BLOCS
@@ -74,11 +66,6 @@ function heroHTML(dir) {
 
     <div class="hero__top">
       <img class="hero__logo" src="/img/logo-bc-centre-blanc-520.png" srcset="/img/logo-bc-centre-blanc-260.png 260w, /img/logo-bc-centre-blanc-520.png 520w, /img/logo-bc-centre-blanc-780.png 780w" sizes="(min-width:760px) 186px, 132px" width="3542" height="1683" alt="Boxing Center" />
-      <!-- La source reste tracée et suit le prospect jusqu'au lead ; elle
-           n'est affichée qu'en mode maquette. « QR FLYER » en haut de page
-           ne dit rien à quelqu'un qui vient de scanner un flyer — c'est de
-           la donnée interne qui fuit dans l'interface. -->
-      <span class="hero__src" data-outil>${esc(SOURCE_LABEL)}</span>
     </div>
 
     <div class="hero__body">
@@ -395,10 +382,6 @@ function render(dir) {
     (dir === "a" ? roundsHTML() : "") +
     (dir === "c" ? `<div class="rail" aria-hidden="true">${CHAPITRES.map(() => "<i></i>").join("")}</div>` : "");
 
-  document.querySelectorAll("[data-set-dir]").forEach((b) =>
-    b.setAttribute("aria-checked", String(b.dataset.setDir === dir))
-  );
-
   mountForm(app, sync);
   /* Un visiteur qui revient a déjà sa salle et son jour en mémoire : le
      formulaire s'ouvre à la première question sans réponse, il ne redemande
@@ -700,52 +683,16 @@ window.addEventListener("scroll", () => {
 }, { passive: true });
 
 /* ============================================================
-   DIRECTION, SON, DÉMARRAGE
+   DÉMARRAGE — direction A, sans outils de maquette
    ============================================================ */
-
-function setDir(dir, remember = true) {
-  if (!DIRS.includes(dir)) dir = "a";
-  if (remember) {
-    const u = new URL(location.href);
-    u.searchParams.set("dir", dir);
-    history.replaceState(null, "", u);
-    try { localStorage.setItem("bc-essai-dir", dir); } catch { /* rien */ }
-  }
-  const y = window.scrollY;
-  render(dir);
-  window.scrollTo({ top: Math.min(y, document.body.scrollHeight), behavior: "auto" });
-}
-
-document.querySelector(".tools")?.addEventListener("click", (e) => {
-  const d = e.target.closest("[data-set-dir]");
-  if (d) { setDir(d.dataset.setDir); return; }
-  const s = e.target.closest("[data-sound]");
-  if (s) {
-    const on = setSound(!isOn());
-    s.setAttribute("aria-pressed", String(on));
-    s.textContent = on ? "♪" : "♪̸";
-    track("son", { actif: on });
-  }
-});
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePoster();
-  if (e.target.matches("input, select, textarea")) return;
-  const map = { 1: "a", 2: "b", 3: "c" };
-  if (map[e.key]) setDir(map[e.key]);
 });
 
-const urlDir = new URLSearchParams(location.search).get("dir");
-let saved = null;
-try { saved = localStorage.getItem("bc-essai-dir"); } catch { /* rien */ }
+if (restoreSound()) setSound(true);
 
-if (restoreSound()) {
-  setSound(true);
-  const b = document.querySelector("[data-sound]");
-  if (b) { b.setAttribute("aria-pressed", "true"); b.textContent = "♪"; }
-}
-
-setDir(urlDir || saved || "a", false);
+render("a");
 
 /* ---------- l'allumage, en deux temps ----------
    `lit`   : le script a la main, les états de départ s'appliquent.
