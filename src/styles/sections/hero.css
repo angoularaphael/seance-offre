@@ -7,9 +7,11 @@
 
 .hero {
   position: relative; isolation: isolate;
+  min-height: 100vh;
   min-height: 100svh;
   display: flex; flex-direction: column;
-  /* PAS d'overflow ici : c'est ce qui coupait le titre quand le contenu
+  overflow-x: clip;
+  /* PAS d'overflow-y ici : c'est ce qui coupait le titre quand le contenu
      dépassait un écran. Seul le média est rogné. */
 }
 
@@ -28,7 +30,7 @@
 /* — barre haute — */
 .hero__top {
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
-  padding: clamp(16px, 2.4vw, 26px) var(--gutter) 0;
+  padding: calc(clamp(16px, 2.4vw, 26px) + env(safe-area-inset-top, 0px)) var(--gutter) 0;
   /* La zone de protection du logo vaut la hauteur du mot CENTER (brand book) :
      on la réserve ici pour que rien ne vienne se coller au filet bronze. */
   margin-bottom: clamp(26px, 4.2vh, 54px);
@@ -278,7 +280,10 @@ html.settled .hero h1 .underline::after { transform: scaleX(1) !important; trans
       radial-gradient(128% 64% at 50% 30%, transparent 30%, rgb(3 5 11 / 0.72) 100%);
   }
 
-  .hero__body { padding-bottom: clamp(22px, 3.4vw, 34px); gap: clamp(10px, 2vw, 15px); }
+  .hero__body {
+    padding-bottom: calc(clamp(22px, 3.4vw, 34px) + env(safe-area-inset-bottom, 0px));
+    gap: clamp(10px, 2vw, 15px);
+  }
 
   .hero__kicker {
     /* 0,16em d'interlettrage sur 30ch faisait encore trois lignes : le

@@ -80,3 +80,15 @@
   --r: 2px;
   --r-card: 4px;
 }
+
+@media (max-width: 640px) {
+  :root {
+    --fs-hero: clamp(3.05rem, 13.5vw, 4.4rem);
+    --fs-h2: clamp(2.05rem, 10.5vw, 3.35rem);
+    --fs-h3: clamp(1.45rem, 6.4vw, 2rem);
+    --fs-line: clamp(1.5rem, 6.8vw, 2.35rem);
+    --gutter: clamp(16px, 4.8vw, 22px);
+    --sect: clamp(56px, 12vw, 88px);
+    --dock-h: calc(124px + env(safe-area-inset-bottom, 0px));
+  }
+}

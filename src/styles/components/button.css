@@ -13,6 +13,7 @@
   letter-spacing: 0.045em; text-transform: uppercase; text-decoration: none;
   border: 1px solid transparent; border-radius: var(--r);
   cursor: pointer; overflow: hidden;
+  text-wrap: balance; text-align: center;
   transition: color var(--t) var(--ease), border-color var(--t) var(--ease),
               transform 0.14s var(--ease);
 }
@@ -55,6 +56,12 @@
 .btn--block { width: 100%; }
 .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 .btn[disabled]:hover::before { transform: scaleX(0); }
+
+@media (max-width: 700px) {
+  .btn { font-size: 1.22rem; min-height: 54px; padding: 15px 20px 12px; gap: 10px; }
+  .act { margin-top: clamp(24px, 5vw, 40px); }
+  .act .btn { width: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .btn, .btn::before, .btn__arrow { transition: none; }

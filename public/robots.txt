@@ -1,7 +1,25 @@
-# C1 — circuit fermé.
-# L'essai reste à 10 € sur tout le réseau Boxing Center ; cette page est la
-# seule à 0 € et ne doit jamais être trouvable autrement que par un QR
-# imprimé ou une campagne. Aucun lien entrant depuis le réseau, aucune
-# indexation : sinon les deux tarifs se détruisent.
+# https://seance-offerte.boxingcenter.fr/llms.txt
+
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /api/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://seance-offerte.boxingcenter.fr/sitemap.xml

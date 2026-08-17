@@ -55,5 +55,5 @@ html:not(.lit) [data-stage]::before { opacity: 0; }
    d'être — pas de pointeur à suivre. On la garde comme atmosphère, à
    intensité réduite. */
 @media (max-width: 700px) {
-  .light { opacity: 0.5; }
+  .light { opacity: 0.38; }
 }

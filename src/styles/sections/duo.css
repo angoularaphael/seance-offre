@@ -14,7 +14,7 @@
 .duo { display: grid; gap: 0; align-items: stretch; }
 @media (min-width: 900px) { .duo { grid-template-columns: 1.05fr 1fr; } }
 
-.duo__media { min-height: clamp(300px, 46vw, 620px); }
+.duo__media { min-height: clamp(240px, 62vw, 620px); }
 .duo__media .ph { position: absolute; inset: 0; }
 
 .duo__media { position: relative; overflow: hidden; }

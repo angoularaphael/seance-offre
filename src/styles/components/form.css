@@ -13,6 +13,8 @@
      largeur d'un formulaire est une mesure de confort, pas de place
      disponible. */
   max-width: 820px;
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   overflow: hidden;
@@ -21,7 +23,7 @@
 /* — en-tête : la progression est un round, pas une barre de téléchargement — */
 .form__head {
   display: flex; align-items: center; justify-content: space-between; gap: 18px;
-  padding: 16px clamp(20px, 3.4vw, 34px) 14px;
+  padding: 16px clamp(16px, 3.4vw, 34px) 14px;
   border-bottom: 1px solid var(--line-soft);
 }
 .form__count {
@@ -29,13 +31,14 @@
   letter-spacing: var(--tr-mono); text-transform: uppercase; color: var(--ink-3);
   white-space: nowrap; font-variant-numeric: tabular-nums;
 }
-.form__pips { display: flex; gap: 5px; }
-/* Sous 400 px, six pastilles de 26 px plus le libellé ne tiennent pas sur
-   la ligne : elles rétrécissent, et la progression reste dite en toutes
-   lettres par « Étape 3 sur 6 ». */
-@media (max-width: 400px) {
-  .form__pips { gap: 3px; }
-  .form__pips i { width: 14px; }
+.form__pips { display: flex; gap: 5px; min-width: 0; }
+/* Sept pastilles de 26 px plus le libellé ne tiennent pas sous ~560 px :
+   elles s'étirent sur toute la largeur, et la progression reste dite
+   en toutes lettres par « Étape 3 sur 7 ». */
+@media (max-width: 560px) {
+  .form__head { flex-wrap: wrap; gap: 10px 12px; }
+  .form__pips { flex: 1 1 100%; gap: 4px; }
+  .form__pips i { flex: 1; width: auto; min-width: 0; max-width: none; }
 }
 .form__pips i {
   width: 26px; height: 3px; background: var(--line);
@@ -47,8 +50,9 @@
 /* — les écrans — */
 .step {
   display: none;
-  padding: clamp(28px, 4.4vw, 52px) clamp(20px, 3.4vw, 34px) clamp(26px, 3.6vw, 40px);
-  flex-direction: column; gap: clamp(20px, 2.6vw, 28px);
+  padding: clamp(22px, 4.4vw, 52px) clamp(16px, 3.4vw, 34px) clamp(22px, 3.6vw, 40px);
+  flex-direction: column; gap: clamp(16px, 2.6vw, 28px);
+  min-width: 0;
 }
 .step.is-on { display: flex; }
 .step__q {
@@ -73,7 +77,11 @@
 /* 168 px de minimum ne tenaient pas en deux colonnes une fois retirées les
    marges du formulaire : les cinq salles s'empilaient sur 890 px de
    défilement pour une seule décision. */
-.opts--visuel { grid-template-columns: repeat(auto-fit, minmax(126px, 1fr)); }
+.opts--visuel { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+@media (max-width: 420px) {
+  .opts { grid-template-columns: 1fr; }
+  .opts--visuel, .opts--days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 .opt {
   position: relative; isolation: isolate;
@@ -114,6 +122,9 @@
   .opt--img b { font-size: 1.25rem; }
   .opt--img span { font-size: 0.625rem; }
 }
+@media (max-width: 380px) {
+  .opts--ami { grid-template-columns: 1fr; }
+}
 .opt--img .ph { position: absolute; inset: 0; z-index: -2; }
 .opt--img .ph img {
   filter: contrast(1.06) saturate(0.88) brightness(0.6);
@@ -144,10 +155,10 @@
   letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-3);
 }
 .field input, .field select {
-  width: 100%; min-height: 58px; padding: 14px 16px;
+  width: 100%; min-width: 0; min-height: 58px; padding: 14px 16px;
   color: var(--ink); background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--r);
-  font-family: var(--f-body); font-size: 1.0625rem;
+  font-family: var(--f-body); font-size: 16px;
   transition: border-color var(--t) var(--ease), background var(--t) var(--ease);
 }
 .field input::placeholder { color: var(--ink-4); }
@@ -168,7 +179,7 @@
 }
 .consent:hover { border-color: var(--ink-4); }
 .consent input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--rouge); cursor: pointer; }
-.consent span { font-size: var(--fs-xs); color: var(--ink-2); line-height: 1.6; }
+.consent span { font-size: var(--fs-xs); color: var(--ink-2); line-height: 1.6; overflow-wrap: anywhere; }
 .consent .field__err { grid-column: 2; }
 .consent.is-bad { border-color: var(--rouge); }
 

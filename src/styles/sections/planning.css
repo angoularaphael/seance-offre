@@ -15,6 +15,7 @@
    largeur mini-contenu, et deux colonnes restaient bloquées à 361 px quelle
    que soit la fenêtre. `minmax(0, 1fr)` autorise la piste à rétrécir. */
 @media (max-width: 620px) { .week { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 360px) { .week { grid-template-columns: 1fr; } }
 /* Sous 400 px, deux colonnes de tuiles dépassaient le cadre de trois
    pixels : la gouttière et le rembourrage se resserrent avant de casser
    la grille en une seule colonne, qui coûterait six lignes de défilement. */
@@ -70,6 +71,11 @@
 /* ---------- l'affiche officielle ---------- */
 .poster { margin-top: clamp(26px, 4vw, 44px); }
 .poster__tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+@media (max-width: 700px) {
+  .poster__tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  .poster__tabs::-webkit-scrollbar { display: none; }
+  .poster__tab { flex: none; }
+}
 .poster__tab {
   padding: 8px 14px 6px; cursor: pointer;
   border: 1px solid var(--line); border-radius: var(--r);
@@ -134,7 +140,7 @@
   .lightbox .ph { width: 880px; max-width: none; }
 }
 .lightbox__close {
-  position: fixed; top: 18px; right: 18px; z-index: 2; cursor: pointer;
+  position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 2; cursor: pointer;
   padding: 11px 18px 9px;
   border: 1px solid var(--line); background: rgb(8 10 16 / 0.9);
   font-family: var(--f-mono); font-size: var(--fs-micro);
@@ -171,5 +177,9 @@
   text-decoration: none;
 }
 .week__swap:hover { color: var(--ink); border-color: var(--rouge); }
+@media (max-width: 520px) {
+  .week__for { gap: 6px 10px; }
+  .week__swap { margin-left: 0; width: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) { .day, .day::before { transition: none; } }

@@ -7,6 +7,11 @@
   border-top: 1px solid var(--line-soft);
 }
 .foot__in { display: flex; flex-wrap: wrap; gap: 26px 48px; justify-content: space-between; align-items: flex-start; }
+@media (max-width: 640px) {
+  .foot { padding-bottom: calc(clamp(36px, 5vw, 56px) + 8px); }
+  .foot__in { flex-direction: column; gap: 22px; }
+  .foot__logo { width: 128px; }
+}
 .foot__logo { width: 148px; height: auto; opacity: 0.9; }
 .foot__list { display: flex; flex-wrap: wrap; gap: 6px 24px; max-width: 46ch; }
 .foot__list li {

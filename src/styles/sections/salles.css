@@ -18,10 +18,11 @@
   display: flex; gap: 6px;
   height: clamp(360px, 52vh, 560px);
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .doors {
     height: auto;
     overflow-x: auto; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
     margin-inline: calc(var(--gutter) * -1);
     padding-inline: var(--gutter);
     scrollbar-width: none;
@@ -41,8 +42,8 @@
   background: var(--surface);
   transition: flex-grow 0.62s var(--ease), border-color var(--t) var(--ease);
 }
-@media (max-width: 700px) {
-  .door { flex: 0 0 66vw; aspect-ratio: 4 / 5; scroll-snap-align: start; }
+@media (max-width: 900px) {
+  .door { flex: 0 0 min(72vw, 280px); aspect-ratio: 4 / 5; scroll-snap-align: start; }
 }
 
 .door .ph { position: absolute; inset: 0; z-index: -2; }
@@ -58,7 +59,7 @@
 }
 
 /* la porte qui s'ouvre */
-@media (min-width: 701px) {
+@media (min-width: 901px) {
   .door:hover, .door:focus-visible, .door[aria-pressed="true"] { flex-grow: 2.6; }
 }
 .door:hover .ph img,
@@ -93,7 +94,7 @@
 .door:hover .door__meta,
 .door:focus-visible .door__meta,
 .door[aria-pressed="true"] .door__meta { opacity: 1; transform: none; }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .door__meta { opacity: 1; transform: none; }
 }
 

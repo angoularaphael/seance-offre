@@ -12,12 +12,18 @@ html[data-dir="a"] .rounds { display: flex; }
 
 /* Le héros : la lumière du cône se pose sur la photo, pas à côté. */
 html[data-dir="a"] .hero__media img { object-position: 58% 42%; }
-html[data-dir="a"] .hero__scrim {
-  background:
-    radial-gradient(58% 44% at 50% -10%, rgb(var(--light) / 0.2), rgb(var(--light) / 0.04) 46%, transparent 70%),
-    linear-gradient(to top, var(--noir) 1%, rgb(8 8 8 / 0.76) 30%, rgb(8 8 8 / 0.24) 64%),
-    linear-gradient(to right, rgb(8 8 8 / 0.84) 4%, rgb(8 8 8 / 0.32) 48%, rgb(8 8 8 / 0.04) 84%),
-    radial-gradient(120% 86% at 50% 44%, transparent 20%, rgb(3 5 11 / 0.9) 100%);
+@media (min-width: 701px) {
+  html[data-dir="a"] .hero__scrim {
+    background:
+      radial-gradient(58% 44% at 50% -10%, rgb(var(--light) / 0.2), rgb(var(--light) / 0.04) 46%, transparent 70%),
+      linear-gradient(to top, var(--noir) 1%, rgb(8 8 8 / 0.76) 30%, rgb(8 8 8 / 0.24) 64%),
+      linear-gradient(to right, rgb(8 8 8 / 0.84) 4%, rgb(8 8 8 / 0.32) 48%, rgb(8 8 8 / 0.04) 84%),
+      radial-gradient(120% 86% at 50% 44%, transparent 20%, rgb(3 5 11 / 0.9) 100%);
+  }
+}
+@media (max-width: 700px) {
+  html[data-dir="a"] .hero__media img { object-position: 52% 26%; }
+  html[data-dir="a"] .hero__acts::before { display: none; }
 }
 
 /* Les sections s'ouvrent sur un round, comme un combat annoncé. */
@@ -37,4 +43,9 @@ html[data-dir="a"] .hero__acts::before {
   filter: blur(10px); pointer-events: none;
 }
 
-html[data-dir="a"] .price__note { color: rgb(var(--light) / 0.72); }
+@media (max-width: 480px) {
+  html[data-dir="a"] .sect__head .eyebrow::after {
+    margin-left: 0; padding-left: 0; border: 0;
+    flex: 1 1 100%;
+  }
+}

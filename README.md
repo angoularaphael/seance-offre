@@ -13,7 +13,7 @@ npm install && npm run dev
 
 <http://localhost:5610>
 
-Front Vite + API `/api/inscrire` (port 5611, proxifié). Page live : https://bc-seance-offerte.vercel.app/
+Front Vite + API `/api/inscrire` (port 5611, proxifié). Page live : https://seance-offerte.boxingcenter.fr/
 
 ```bash
 npm run build
@@ -29,8 +29,9 @@ npm run build
 ```
 
 Sort dans `dist/` — HTML, CSS et JS statiques, rien d'autre. Prêt pour Vercel
-(`vercel.json` fournit déjà la commande de build, les en-têtes de cache et le
-`X-Robots-Tag: noindex`).
+(`vercel.json` fournit déjà la commande de build et les en-têtes de cache).
+La page est indexable : `robots.txt` autorise `/`, `sitemap.xml` pointe sur
+l'accueil, `/api` reste en `noindex`.
 
 ## Direction
 
@@ -92,11 +93,13 @@ Chaque chapitre tue une peur nommée par la recherche.
 ## Structure
 
 ```
-index.html            squelette : lumière, rail, barre collante, outils
-vercel.json           build, cache, X-Robots-Tag noindex
+index.html            squelette : lumière, rail, barre collante, SEO
+vercel.json           build, cache, X-Robots-Tag noindex sur /api
 public/fonts/         Bebas Neue · Montserrat · JetBrains Mono (sous-ensembles latins)
 public/img/           18 visuels réels, webp, 3 largeurs + LQIP
-public/robots.txt     Disallow: / — circuit fermé
+public/robots.txt     Allow: / · sitemap
+public/sitemap.xml    URL canonique de l'offre
+public/llms.txt       fiche pour assistants IA
 src/js/
   main.js             montage des sections, bascule de direction
   data.js             contenu — chaque affirmation tracée à sa source

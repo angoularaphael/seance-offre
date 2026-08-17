@@ -33,6 +33,11 @@
 .quote {
   margin: 0; padding: 24px 24px 22px; background: var(--surface);
   display: flex; flex-direction: column; gap: 14px;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .quote { padding: 18px 16px 16px; }
+  .score__n { font-size: clamp(4.2rem, 22vw, 6.2rem); }
 }
 .quote blockquote {
   margin: 0; font-size: clamp(1.0625rem, 2vw, 1.25rem);
