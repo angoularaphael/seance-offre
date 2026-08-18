@@ -11,7 +11,7 @@ export const OFFRE = {
   prixHabituel: "10 €",
   prixOffert: "0 €",
   ctaPrimaire: "Je réserve ma séance offerte",
-  dockNote: "2 min · sans engagement",
+  dockNote: "sans engagement",
   /* C1 — le réseau garde l'essai à 10 €. Sans cette phrase, le 0 € de
      cette page détruit le tarif des cinq salles. */
   cadrageTitre: "Pourquoi celle-ci est offerte",
@@ -57,7 +57,7 @@ export const HEROS = {
     kicker: "Tu as scanné. Voici ton laissez-passer.",
     titre: ["Ta séance", "est offerte."],
     lede:
-      "Ce titre d'accès vaut une séance d'essai dans la salle de ton choix. Il se complète en deux minutes et t'attend à l'accueil.",
+      "Ce titre d'accès vaut une séance d'essai dans la salle de ton choix. Il t'attend à l'accueil.",
     img: "femme-garde",
   },
   c: {

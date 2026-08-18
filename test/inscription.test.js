@@ -53,6 +53,15 @@ describe('validateInscription', () => {
     assert.equal(r.data.ami.email, '');
   });
 
+  it('accepte un ami avec seulement prénom, nom et numéro', () => {
+    const r = validateInscription({
+      ...base,
+      ami: { prenom: 'Alex', nom: 'Martin', tel: '06 98 76 54 32' },
+    });
+    assert.equal(r.ok, true, errorMessage(r.errors));
+    assert.equal(r.data.ami.sexe, 'A');
+  });
+
   it('refuse un email principal mal formé', () => {
     const bad = validateInscription({ ...base, email: 'pas-un-mail' });
     assert.equal(bad.ok, false);

@@ -116,9 +116,9 @@ test.describe('tunnel inscription', () => {
     await expect(page.locator('#done-h')).toContainText(/Camille et Alex/i, { timeout: 15000 });
     expect(payloads.at(-1)?.ami?.prenom).toBe('Alex');
     expect(payloads.at(-1)?.ami?.naissance || '').toBe('');
-    await expect(page.locator('#done-p')).toContainText(/vous venez à deux/i);
+    await expect(page.locator('#done-p')).toContainText(/reste offerte/i);
     await expect(page.locator('#done-recap dd').nth(3)).toContainText(/Oui — tu viens avec Alex/i);
-    await expect(page.locator('#done-note')).toContainText(/ensemble/i);
+    await expect(page.locator('#done-note')).toContainText(/même jour|offertes/i);
     const photo = page.locator('#done-media img');
     await expect(photo).toBeVisible();
     await expect(photo).toHaveAttribute('src', /seance-essai-gratuite/);

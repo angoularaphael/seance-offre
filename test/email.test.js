@@ -23,7 +23,7 @@ describe('mail de confirmation', () => {
     const payload = confirmationPayloadFromData(data);
     const html = confirmationHtml(payload);
     assert.match(html, /À lundi, Yavol et Gojipe/);
-    assert.match(html, /avec Gojipe/);
+    assert.match(html, /avec Gojipe|et celle de Gojipe/);
     assert.match(html, /0 €/);
     assert.match(html, /Boxing Center Ramonville/);
     assert.match(html, /Lundi \(17\/08\/2026\)/);
@@ -38,7 +38,8 @@ describe('mail de confirmation', () => {
     const payload = confirmationPayloadFromData(data, { asFriend: true });
     const html = confirmationHtml(payload);
     assert.match(html, /Yavol t’a inscrit/);
-    assert.match(html, /Gojipe, ce n’est pas un mail de confirmation pour Yavol/);
+    assert.match(html, /offrir une séance d’essai/);
+    assert.match(html, /pas obligés de venir le même jour/);
     assert.match(html, /Invitation — séance offerte/);
     assert.match(html, /Inscrit\(e\) par/);
     assert.doesNotMatch(html, />Accompagné</);
@@ -46,7 +47,7 @@ describe('mail de confirmation', () => {
     assert.notEqual(confirmationSubject(payload), confirmationSubject(host));
     assert.notEqual(confirmationHtml(payload), confirmationHtml(host));
     assert.match(confirmationSubject(payload), /Yavol t’a inscrit/);
-    assert.match(confirmationText(payload), /t’inscrire/);
+    assert.match(confirmationText(payload), /t’offrir une séance/);
   });
 
   it('HTML solo : un seul prénom', () => {

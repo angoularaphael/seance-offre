@@ -69,7 +69,8 @@ const STEPS = [
   },
   {
     id: "identite", kind: "champs",
-    q: "Comment on t'appelle ?",
+    q: "On t'inscrit sous quel nom ?",
+    why: "Prénom et nom — c'est comme ça qu'on t'appelle dans le coin.",
     fields: [
       { k: "prenom", l: "Prénom", t: "text", ac: "given-name", ph: "Camille" },
       { k: "nom", l: "Nom", t: "text", ac: "family-name", ph: "Durand" },
@@ -77,8 +78,8 @@ const STEPS = [
   },
   {
     id: "contact", kind: "champs",
-    q: "Où on t'envoie la confirmation ?",
-    why: "Un email pour ta confirmation. Un numéro au cas où le planning bouge. On n'appelle pas pour vendre.",
+    q: "Où on t'envoie le laissez-passer ?",
+    why: "Un email pour confirmer. Un numéro si le planning bouge. On n'appelle pas pour vendre.",
     fields: [
       { k: "email", l: "Email", t: "email", ac: "email", ph: "camille@exemple.fr" },
       { k: "tel", l: "Téléphone mobile", t: "tel", ac: "tel", ph: "06 12 34 56 78" },
@@ -106,19 +107,19 @@ const STEPS = [
   {
     id: "ami", kind: "ami", submit: "ami",
     q: "Tu viens avec quelqu'un ?",
-    why: "Ta fiche est en cours de création. Sa séance est offerte aussi — tu peux ajouter quelqu'un maintenant.",
+    why: "Profites-en pour offrir une séance d'essai offerte à un de tes amis, tu peux ajouter quelqu'un maintenant.",
   },
 ];
 
 const AMI_FIELDS = [
   ["a_prenom", "Son prénom", "text", "Alex", "prenom"],
   ["a_nom", "Son nom", "text", "Martin", "nom"],
-  ["a_email", "Son email (si tu le connais)", "email", "alex@exemple.fr", "email_ami"],
-  ["a_tel", "Son mobile", "tel", "06 98 76 54 32", "tel"],
-  ["a_naissance", "Sa date de naissance (si tu la connais)", "date", "", "naissance_ami"],
-  ["a_adresse", "Son adresse (si tu la connais)", "text", "12 rue des Lilas", "adresse_ami"],
-  ["a_cp", "Son code postal", "text", "31000", "cp_ami"],
-  ["a_ville", "Sa ville", "text", "Toulouse", "ville_ami"],
+  ["a_tel", "Son numéro", "tel", "06 98 76 54 32", "tel_ami"],
+  ["a_email", "Son email (si tu l'as)", "email", "alex@exemple.fr", "email_ami"],
+  ["a_naissance", "Sa date de naissance (si tu l'as)", "date", "", "naissance_ami"],
+  ["a_adresse", "Son adresse (si tu l'as)", "text", "12 rue des Lilas", "adresse_ami"],
+  ["a_cp", "Son code postal (si tu l'as)", "text", "31000", "cp_ami"],
+  ["a_ville", "Sa ville (si tu l'as)", "text", "Toulouse", "ville_ami"],
 ];
 
 const RX_MAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -137,7 +138,10 @@ function invalid(rule, val) {
       if (!v) return "";
       return RX_MAIL.test(v) ? "" : "Cet email n'a pas l'air valide — tu peux aussi le laisser vide.";
     case "tel":
-      return !v ? "Un numéro de mobile, au cas où le planning change."
+      return !v ? "Un numéro de mobile, au cas où le planning bouge."
+        : !RX_TEL.test(v) ? "Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78." : "";
+    case "tel_ami":
+      return !v ? "Son numéro, pour lui ouvrir sa séance offerte."
         : !RX_TEL.test(v) ? "Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78." : "";
     case "naissance":
     case "naissance_ami": {
@@ -217,18 +221,18 @@ function stepBody(st) {
       <em class="field__err" role="alert"></em>
     </div>
     <div class="fields fields--2" id="ami-fields"${aDeux ? "" : " hidden"}>
-      <p class="step__why" style="grid-column:1/-1">Ses infos pour sa propre fiche. Adresse, code postal, ville et date de naissance : seulement si tu les as, sinon on mettra les valeurs par défaut.</p>
+      <p class="step__why" style="grid-column:1/-1">${fr("Pour lui ouvrir sa séance : prénom, nom et numéro, c'est tout ce qu'il faut. Email, date de naissance, adresse : seulement si tu les as.")}</p>
       ${AMI_FIELDS.map(
         ([k, l, t, ph]) =>
           `<label class="field${k === "a_adresse" ? " field--wide" : ""}" data-f="${k}"><span>${esc(l)}</span><input type="${t}" data-k="${k}" ${ph ? `placeholder="${esc(ph)}"` : ""} value="${esc((state.ami && state.ami[k]) || "")}" /><em class="field__err" role="alert"></em></label>`
       ).join("")}
-      <label class="field" data-f="a_sexe"><span>Son sexe</span>
-        <select data-k="a_sexe"><option value="">Choisir…</option>
+      <label class="field" data-f="a_sexe"><span>Son sexe (si tu l'as)</span>
+        <select data-k="a_sexe"><option value="">Pas besoin</option>
           ${[["F", "Femme"], ["H", "Homme"], ["A", "Ne se prononce pas"]]
             .map(([v, l]) => `<option value="${v}"${state.ami && state.ami.a_sexe === v ? " selected" : ""}>${l}</option>`)
             .join("")}
         </select><em class="field__err" role="alert"></em></label>
-      <p class="step__why" style="grid-column:1/-1">Sa salle et son jour reprennent les tiens. Vous pourrez les changer avec l'équipe sur place.</p>
+      <p class="step__why" style="grid-column:1/-1">${fr("Vous n'êtes pas obligés d'arriver ensemble : sa séance reste offerte, même s'il passe un autre jour.")}</p>
     </div>`;
 }
 
@@ -330,6 +334,20 @@ export function mountForm(root, onChange) {
   const pips = [...root.querySelectorAll("#form-pips i")];
   const screens = [...form.querySelectorAll("[data-step]")];
   let started = false;
+  let lastPaintedStep = state.step;
+
+  const scrollEtapeEnHaut = () => {
+    const current =
+      form.querySelector(".step.is-on") ||
+      (state.step >= STEPS.length ? form.querySelector(".done") : null) ||
+      document.getElementById("formulaire");
+    const html = document.documentElement;
+    const prev = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    const y = current.getBoundingClientRect().top + window.scrollY - 8;
+    window.scrollTo(0, Math.max(0, y));
+    html.style.scrollBehavior = prev;
+  };
 
   const paint = () => {
     screens.forEach((s) => {
@@ -351,6 +369,10 @@ export function mountForm(root, onChange) {
     const box = form.querySelector("#ami-fields");
     if (box) box.hidden = !aDeux;
     onChange && onChange(state);
+    if (state.step !== lastPaintedStep) {
+      lastPaintedStep = state.step;
+      requestAnimationFrame(scrollEtapeEnHaut);
+    }
   };
 
   const begin = () => {
@@ -412,9 +434,6 @@ export function mountForm(root, onChange) {
       showErr(k, msg);
       if (msg) ok = false;
     });
-    const sx = invalid("sexe", state.ami.a_sexe);
-    showErr("a_sexe", sx);
-    if (sx) ok = false;
     return ok;
   };
 
@@ -435,7 +454,7 @@ export function mountForm(root, onChange) {
       : (jourTxt ? `À ${jourTxt}, ${prenom}.` : `À très vite, ${prenom}.`);
 
     root.querySelector("#done-p").textContent = aDeux
-      ? `${prenom}, vous venez à deux. Ta séance d'essai est enregistrée${salleTxt}, avec ${amiPrenom || "un(e) ami(e)"}. Présentez-vous ensemble à l'accueil en tenue de sport : le matériel est prêté. La séance de ${amiPrenom || "ton ami(e)"} est offerte aussi.`
+      ? `${prenom}, ta séance d'essai est enregistrée${salleTxt}, et celle de ${amiPrenom || "ton ami(e)"} aussi. Vous n'êtes pas obligés d'arriver ensemble : sa séance reste offerte, même s'il passe un autre jour. Tenue de sport, le matériel est prêté.`
       : `${prenom}, tu viens seul. Ta séance d'essai est enregistrée${salleTxt}. Présente-toi à l'accueil en tenue de sport : le matériel est prêté.`;
 
     root.querySelector("#done-recap").innerHTML = [
@@ -452,7 +471,7 @@ export function mountForm(root, onChange) {
     const note = root.querySelector("#done-note");
     if (note) {
       note.textContent = aDeux
-        ? "Un email de confirmation part vers chacune de vos boîtes. Présentez-vous ensemble à l'accueil : les deux séances sont offertes, habituellement à 10 €."
+        ? "Un email part vers chacune de vos boîtes. Les deux séances sont offertes, habituellement à 10 € — même si vous ne venez pas le même jour."
         : "Un email de confirmation part vers ta boîte. Présente-toi à l'accueil : tu viens seul, la séance est offerte, habituellement à 10 €.";
     }
 

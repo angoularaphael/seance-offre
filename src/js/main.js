@@ -321,9 +321,9 @@ function inscriptionHTML(dir) {
     <span class="sect__mark" aria-hidden="true">05</span>
     <div class="shell">
       <div class="sect__head" data-rv>
-        <span class="eyebrow" data-round="Dernier round">Deux minutes</span>
+        <span class="eyebrow" data-round="Dernier round">Ta place dans le coin</span>
         <h2>${lignes(dir === "b" ? "Complète<br>ton laissez-passer." : "Prends ta place<br>dans le coin.")}</h2>
-        <p>${fr("Six écrans courts. Les deux premiers se touchent — on ne tape rien avant d'avoir dit oui deux fois. Tu peux revenir en arrière à tout moment.")}</p>
+        <p>${fr("Salle, jour, puis tes infos. Tu peux revenir en arrière à tout moment.")}</p>
       </div>
       <div class="form-layout" data-rv>
         ${formHTML()}
