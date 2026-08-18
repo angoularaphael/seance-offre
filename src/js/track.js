@@ -10,9 +10,24 @@ import { SOURCES } from "./data.js";
 
 const KEY = "bc-essai-src";
 
-function readSource() {
+function readUtm() {
   const p = new URLSearchParams(location.search);
-  const raw = (p.get("src") || p.get("utm_source") || "").toLowerCase().trim();
+  return {
+    src: (p.get("src") || p.get("utm_source") || "").toLowerCase().trim(),
+    medium: (p.get("utm_medium") || "").toLowerCase().trim(),
+    campaign: (p.get("utm_campaign") || p.get("c") || "").toLowerCase().trim(),
+  };
+}
+
+function isFlyerUtm(u) {
+  if (u.src === "flyer" || u.src === "affiche") return true;
+  if (u.src === "qr" && (u.medium === "poster" || u.campaign === "rentree_2026" || u.campaign === "rentree-2026")) return true;
+  return false;
+}
+
+function readSource() {
+  const u = readUtm();
+  const raw = isFlyerUtm(u) ? "flyer" : u.src;
   if (raw) {
     try { sessionStorage.setItem(KEY, raw); } catch { /* mode privé */ }
     return raw;
@@ -44,6 +59,27 @@ export const PASS_NO = (() => {
   return `${base}-${n}`;
 })();
 
+function persistVisit(event) {
+  try {
+    if (sessionStorage.getItem("bc-essai-pv")) return;
+    sessionStorage.setItem("bc-essai-pv", "1");
+  } catch { /* mode privé : on envoie quand même */ }
+  const u = readUtm();
+  const body = JSON.stringify({
+    event,
+    src: SOURCE,
+    utm_source: u.src,
+    medium: u.medium,
+    campaign: u.campaign,
+    path: location.pathname + location.search,
+  });
+  try {
+    navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
+  } catch {
+    fetch("/api/track", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+  }
+}
+
 export function track(event, data = {}) {
   const payload = { event: "bc_" + event, source: SOURCE, ...data };
   window.dataLayer = window.dataLayer || [];
@@ -54,6 +90,7 @@ export function track(event, data = {}) {
   if (typeof window.fbq === "function") {
     window.fbq("trackCustom", event, { source: SOURCE, ...data });
   }
+  if (event === "page_vue") persistVisit(event);
   if (import.meta.env && import.meta.env.DEV) console.info("[suivi]", payload);
 }
 
