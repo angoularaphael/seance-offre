@@ -19,6 +19,13 @@ test.describe('page séance offerte', () => {
     expect(Number(res.headers()['content-length'] || 0)).toBeGreaterThan(10000);
   });
 
+  test('image Open Graph servie', async ({ request }) => {
+    const res = await request.get('/og.png');
+    expect(res.ok()).toBeTruthy();
+    expect(res.headers()['content-type']).toMatch(/image\/(png|jpeg)/);
+    expect(Number(res.headers()['content-length'] || 0)).toBeGreaterThan(10000);
+  });
+
   test('tracking ?src=flyer', async ({ page }) => {
     await page.goto('/?src=flyer&nu=1&dir=a');
     const src = await page.evaluate(() => window.dataLayer?.find((e) => e.event === 'bc_page_vue')?.source || null);
@@ -80,8 +87,12 @@ test.describe('tunnel inscription', () => {
     await page.locator('.step.is-on [data-ami="non"]').click();
     await page.locator('.step.is-on [data-next]').click();
     await expect(page.locator('#done-h')).toContainText(/Camille/i);
-    await expect(page.locator('#done-recap')).toContainText(/non/i);
-    await expect(page.locator('#done-recap dd').nth(3)).toHaveText(/non/i);
+    await expect(page.locator('#done-p')).toContainText(/tu viens seul/i);
+    await expect(page.locator('#done-recap dd').nth(3)).toHaveText(/Non — tu viens seul/i);
+    await expect(page.locator('#done-note')).toContainText(/ta boîte/i);
+    await expect.poll(async () =>
+      page.locator('#formulaire').evaluate((el) => el.getBoundingClientRect().top)
+    ).toBeLessThan(48);
     const photo = page.locator('#done-media img');
     await expect(photo).toBeVisible();
     await expect.poll(async () => photo.evaluate((img) => img.naturalWidth)).toBeGreaterThan(100);
@@ -102,11 +113,12 @@ test.describe('tunnel inscription', () => {
     await page.locator('.step.is-on [data-k="a_tel"]').fill('0698765432');
     await page.locator('.step.is-on [data-k="a_sexe"]').selectOption('H');
     await page.locator('.step.is-on [data-next]').click();
-    await expect(page.locator('#done-h')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#done-h')).toContainText(/Camille et Alex/i, { timeout: 15000 });
     expect(payloads.at(-1)?.ami?.prenom).toBe('Alex');
     expect(payloads.at(-1)?.ami?.naissance || '').toBe('');
-    await expect(page.locator('#done-recap dd').nth(3)).toContainText(/oui/i);
-    await expect(page.locator('#done-recap')).toContainText(/Alex/i);
+    await expect(page.locator('#done-p')).toContainText(/vous venez à deux/i);
+    await expect(page.locator('#done-recap dd').nth(3)).toContainText(/Oui — tu viens avec Alex/i);
+    await expect(page.locator('#done-note')).toContainText(/ensemble/i);
     const photo = page.locator('#done-media img');
     await expect(photo).toBeVisible();
     await expect(photo).toHaveAttribute('src', /seance-essai-gratuite/);

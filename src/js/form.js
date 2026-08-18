@@ -274,11 +274,50 @@ export function formHTML() {
               <li>Rien d'autre — le matériel est prêté</li>
             </ul>
           </div>
-          <p class="step__why">${fr("Un email de confirmation part vers ta boîte. Présente-toi à l'accueil : la séance est offerte, habituellement à 10 €.")}</p>
+          <p class="step__why" id="done-note"></p>
         </div>
       </section>
     </form>
   </div>`;
+}
+
+function capName(s) {
+  return String(s || "")
+    .trim()
+    .replace(/\S+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
+function amiPrenomAffiche() {
+  return capName((state.ami && state.ami.a_prenom) || "");
+}
+
+function amiNomCourt() {
+  const p = amiPrenomAffiche();
+  const n = capName((state.ami && state.ami.a_nom) || "");
+  if (p && n && p.toLowerCase() === n.toLowerCase()) return p;
+  return p || n;
+}
+
+function scrollConfirmationEnHaut(root) {
+  document.documentElement.classList.add("is-booked");
+  const cible =
+    root.querySelector(".done") ||
+    document.getElementById("formulaire") ||
+    document.getElementById("inscription");
+  const aller = () => {
+    const html = document.documentElement;
+    const prev = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    if (!cible) {
+      window.scrollTo(0, 0);
+    } else {
+      const y = cible.getBoundingClientRect().top + window.scrollY - 8;
+      window.scrollTo(0, Math.max(0, y));
+    }
+    html.style.scrollBehavior = prev;
+  };
+  aller();
+  requestAnimationFrame(aller);
 }
 
 /* ---------- comportement ---------- */
@@ -383,33 +422,42 @@ export function mountForm(root, onChange) {
     syncAmiFromDom(form);
     const salle = SALLES.find((s) => s.id === state.salle);
     const jour = JOURS.find((j) => j.id === state.jour);
-    const prenom = (state.prenom || "").trim();
-
+    const prenom = capName(state.prenom);
     const pressedOui = form.querySelector('[data-ami="oui"]')?.getAttribute("aria-pressed") === "true";
     const aDeux = isADeux() || pressedOui;
-    const amiPrenom = aDeux ? String((state.ami && state.ami.a_prenom) || "").trim() : "";
-    const amiNom = aDeux ? [amiPrenom, String((state.ami && state.ami.a_nom) || "").trim()].filter(Boolean).join(" ") : "";
+    const amiPrenom = aDeux ? amiPrenomAffiche() : "";
+    const amiCourt = aDeux ? amiNomCourt() : "";
+    const salleTxt = salle ? ` à Boxing Center ${salle.nom}` : "";
+    const jourTxt = jour ? jour.nom.toLowerCase() : "";
 
-    root.querySelector("#done-h").textContent = jour
-      ? (amiPrenom
-          ? `À ${jour.nom.toLowerCase()}, ${prenom} et ${amiPrenom}.`
-          : `À ${jour.nom.toLowerCase()}, ${prenom}.`)
-      : (amiPrenom ? `À très vite, ${prenom} et ${amiPrenom}.` : `À très vite, ${prenom}.`);
+    root.querySelector("#done-h").textContent = aDeux && amiPrenom
+      ? (jourTxt ? `À ${jourTxt}, ${prenom} et ${amiPrenom}.` : `À très vite, ${prenom} et ${amiPrenom}.`)
+      : (jourTxt ? `À ${jourTxt}, ${prenom}.` : `À très vite, ${prenom}.`);
 
     root.querySelector("#done-p").textContent = aDeux
-      ? `${prenom}, ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}${amiPrenom ? `, avec ${amiPrenom}` : ", avec un(e) ami(e)"}. Présentez-vous à l'accueil en tenue de sport : le matériel est prêté.${amiPrenom ? ` La séance de ${amiPrenom} est offerte aussi.` : " Sa séance est offerte aussi."}`
-      : `Ta séance d'essai est enregistrée${salle ? ` à Boxing Center ${salle.nom}` : ""}. Présente-toi à l'accueil en tenue de sport : le matériel est prêté.`;
+      ? `${prenom}, vous venez à deux. Ta séance d'essai est enregistrée${salleTxt}, avec ${amiPrenom || "un(e) ami(e)"}. Présentez-vous ensemble à l'accueil en tenue de sport : le matériel est prêté. La séance de ${amiPrenom || "ton ami(e)"} est offerte aussi.`
+      : `${prenom}, tu viens seul. Ta séance d'essai est enregistrée${salleTxt}. Présente-toi à l'accueil en tenue de sport : le matériel est prêté.`;
 
     root.querySelector("#done-recap").innerHTML = [
       ["Salle", esc(salle ? salle.nom : "—")],
       ["Jour prévu", esc(jour ? jour.nom : "—")],
       ["À régler sur place", "<b>0 €</b> — au lieu de 10 €"],
-      ["Accompagné", aDeux ? (amiNom ? `oui — ${esc(prenom)} et ${esc(amiNom)}` : "oui — à deux") : "non"],
+      ["Accompagné", aDeux
+        ? (amiCourt ? `Oui — tu viens avec ${esc(amiCourt)}` : "Oui — vous venez à deux")
+        : "Non — tu viens seul"],
     ]
       .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
       .join("");
 
+    const note = root.querySelector("#done-note");
+    if (note) {
+      note.textContent = aDeux
+        ? "Un email de confirmation part vers chacune de vos boîtes. Présentez-vous ensemble à l'accueil : les deux séances sont offertes, habituellement à 10 €."
+        : "Un email de confirmation part vers ta boîte. Présente-toi à l'accueil : tu viens seul, la séance est offerte, habituellement à 10 €.";
+    }
+
     track("formulaire_valide", { salle: state.salle, jour: state.jour, ami: aDeux });
+    scrollConfirmationEnHaut(root);
   };
 
   const payloadFromState = (phase) => {

@@ -8,6 +8,7 @@
 
 .form {
   position: relative;
+  scroll-margin-top: 12px;
   /* 820 px au plus. Sans borne, le panneau prenait toute la colonne — des
      champs de 537 px pour un prénom et un bouton de mille pixels : la
      largeur d'un formulaire est une mesure de confort, pas de place
@@ -212,7 +213,7 @@
    Le §11.1 demande des informations pratiques et l'invitation à venir en
    tenue de sport. C'est le moment où le prospect a dit oui : il mérite
    autre chose qu'un accusé de réception. */
-.done { display: grid; }
+.done { display: grid; scroll-margin-top: 12px; }
 @media (min-width: 820px) { .done { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: stretch; } }
 .done__media {
   position: relative; overflow: hidden;

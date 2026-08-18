@@ -13,6 +13,11 @@
   transition: transform 0.55s var(--ease);
 }
 .dock.is-on { transform: none; }
+html.is-booked .dock,
+html.is-booked .dock.is-on {
+  transform: translateY(115%);
+  pointer-events: none;
+}
 
 .dock__in {
   max-width: var(--shell); margin-inline: auto;
