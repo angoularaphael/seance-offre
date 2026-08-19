@@ -42,6 +42,7 @@ async function readBody(req) {
 function emailDataFromLead(lead, { ami = null, ami_pending = false } = {}) {
   const gym = getGym(lead.salle);
   return {
+    orderId: lead.id,
     prenom: lead.prenom,
     nom: lead.nom,
     email: lead.email,
@@ -75,6 +76,16 @@ async function handleFinishPhase(res, body, dryRun) {
   const emails = await sendConfirmationEmails(data, { dryRun }).catch((err) => [
     { sent: false, error: err.message },
   ]);
+  const mailFailed = !dryRun && emails.some((e) => e && e.sent === false && e.reason !== 'no_recipient');
+  if (mailFailed) {
+    json(res, 502, {
+      ok: false,
+      error: 'Inscription enregistrée, mais la facture n’a pas pu être envoyée. Réessaie dans un instant.',
+      order_id: orderId,
+      emails,
+    });
+    return;
+  }
   lead.status = dryRun ? 'dry_run' : 'confirmed';
   lead.ami = null;
   await saveLead(lead);

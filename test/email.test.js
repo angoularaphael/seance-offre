@@ -56,6 +56,7 @@ describe('mail de confirmation', () => {
     assert.match(html, /À lundi, Yavol\./);
     assert.doesNotMatch(html, /Gojipe/);
     assert.match(html, />Non</);
+    assert.match(html, /facture/i);
   });
 
   it('envoie deux mails distincts au prospect et à l’ami', async () => {
@@ -74,6 +75,8 @@ describe('mail de confirmation', () => {
     }
     assert.equal(sent.length, 2);
     assert.equal(sent[0].to[0].email, 'yavol@example.com');
+    assert.ok(sent[0].attachment?.length >= 1);
+    assert.match(sent[0].attachment[0].name, /facture/i);
     assert.equal(sent[1].to[0].email, 'gojipe@example.com');
     assert.notEqual(sent[0].subject, sent[1].subject);
     assert.match(sent[0].subject, /avec Gojipe/);

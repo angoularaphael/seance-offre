@@ -187,7 +187,7 @@ describe('relances', () => {
   before(() => resetMemoryLeads());
   after(() => resetMemoryLeads());
 
-  it('relance prospect à J+1 sans vente', () => {
+  it('relance prospect 72h après la séance, sans vente', () => {
     const lead = {
       id: 'L1',
       visit_date: '2026-08-16',
@@ -195,7 +195,9 @@ describe('relances', () => {
       salle: 'minimes',
       prenom: 'Camille',
     };
-    const d = classifyRelance(lead, new Date(2026, 7, 17, 10, 0, 0));
+    const tooSoon = classifyRelance(lead, new Date(2026, 7, 17, 10, 0, 0));
+    assert.equal(tooSoon.action, 'wait');
+    const d = classifyRelance(lead, new Date(2026, 7, 19, 10, 0, 0));
     assert.equal(d.action, 'prospect');
   });
 
