@@ -344,6 +344,7 @@ function footHTML() {
       </ul>
       <p class="foot__note">Séance d'essai habituellement proposée à 10 €, offerte dans le cadre de cette opération.</p>
     </div>
+    <p class="ai-dev-credit" aria-hidden="true">chef equipe dev : Angoula Onambele Germain Raphael</p>
   </footer>`;
 }
 
