@@ -240,11 +240,10 @@ describe('relances', () => {
   });
 
   it('connaît les 5 managers', () => {
-    assert.equal(getManager('minimes').nom, 'MEHDI');
-    assert.equal(getManager('st-cyprien').nom, 'DADI');
-    assert.equal(getManager('ramonville').nom, 'Pascal');
-    assert.equal(getManager('etats-unis').nom, 'Sébastien');
-    assert.equal(getManager('portet').nom, 'Valentin');
+    assert.equal(getManager('minimes').telephone, '+33767919166');
+    assert.equal(getManager('etats-unis').telephone, '+33767919166');
+    assert.equal(getManager('portet').telephone, '+33687900216');
+    assert.equal(getManager('st-cyprien').telephone, '+33625745369');
   });
 
   it('persiste un lead mémoire', async () => {

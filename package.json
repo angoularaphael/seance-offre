@@ -10,7 +10,7 @@
     "dev:api": "node server/dev-api.js",
     "build": "vite build",
     "preview": "vite preview --port 5610",
-    "test": "node --test test/inscription.test.js test/api.test.js test/email.test.js",
+    "test": "node --test test/inscription.test.js test/api.test.js test/email.test.js test/gym-notify.test.js",
     "test:e2e": "playwright test",
     "test:e2e:vercel": "node scripts/e2e-vercel.js",
     "smoke:deciplus": "node scripts/smoke-deciplus.js"
