@@ -10,7 +10,6 @@ import {
 } from '../lib/inscription.js';
 import { forwardJobs } from '../lib/bot.js';
 import { sendConfirmationEmails, sendInternalNotification } from '../lib/email.js';
-import { notifyGymOfEssai } from '../lib/gym-notify.js';
 import { getGym } from '../lib/gyms.js';
 import { getLead, saveLead } from '../lib/leads.js';
 
@@ -90,9 +89,6 @@ async function handleFinishPhase(res, body, dryRun) {
   lead.status = dryRun ? 'dry_run' : 'confirmed';
   lead.ami = null;
   await saveLead(lead);
-  if (!dryRun) {
-    await notifyGymOfEssai(lead, { dryRun }).catch(() => null);
-  }
 
   json(res, 200, {
     ok: true,
@@ -156,9 +152,6 @@ async function handleAmiPhase(res, body, dryRun) {
       ]);
   if (!already) {
     await sendInternalNotification(data, { orderId, dryRun }).catch(() => {});
-    if (!dryRun) {
-      await notifyGymOfEssai({ ...lead, ami: parsedAmi.friend }, { ami: true, dryRun }).catch(() => null);
-    }
   }
 
   console.info('[seance-offerte] ami', {
@@ -284,12 +277,6 @@ export async function handleInscrire(req, res) {
     sent: false,
     error: err.message,
   }));
-  const gymWa = dryRun
-    ? { sent: false, reason: 'dry_run' }
-    : await notifyGymOfEssai(lead, { dryRun }).catch((err) => ({
-        sent: false,
-        error: err.message,
-      }));
 
   console.info('[seance-offerte] inscription', {
     order_id: orderId,
@@ -297,7 +284,6 @@ export async function handleInscrire(req, res) {
     fiches: jobs.length,
     salle: parsed.data.salle,
     visit_date: parsed.data.visit_date,
-    gym_wa: gymWa?.sent || false,
   });
 
   json(res, 200, {
