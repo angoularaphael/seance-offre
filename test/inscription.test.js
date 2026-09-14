@@ -89,6 +89,7 @@ describe('buildDeciplusJobs', () => {
     assert.equal(jobs.length, 1);
     assert.equal(jobs[0].sale_type, 'none');
     assert.equal(jobs[0].create_sale, false);
+    assert.equal(jobs[0].ready_for_dispatch, true);
     assert.equal(jobs[0].payment.amount, 0);
     assert.equal(jobs[0].info_compta, INFO_COMPTA_MENTION);
     assert.equal(jobs[0].customer.address, '18 rue des Lilas');
