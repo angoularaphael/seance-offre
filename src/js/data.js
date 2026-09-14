@@ -169,6 +169,7 @@ export const SOURCES = {
   story: "Story Instagram",
   fb: "Publication Facebook",
   wa: "WhatsApp",
+  email: "Campagne e-mail David",
 };
 
 /* Les rounds : le squelette de la page. */

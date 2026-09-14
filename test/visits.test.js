@@ -11,6 +11,14 @@ describe('tracker flyer QR', () => {
     assert.equal(flyerSourceLabel({ src: 'qr', medium: 'poster', campaign: 'rentree_2026' }), 'flyer');
   });
 
+  it('laisse le trafic e-mail à part du flyer', () => {
+    assert.equal(isFlyerHit({ src: 'email', medium: 'email', campaign: 'seance_offerte_2026' }), false);
+    assert.equal(
+      flyerSourceLabel({ src: 'email', medium: 'email', campaign: 'seance_offerte_2026' }),
+      'email'
+    );
+  });
+
   it('laisse le trafic direct à part', () => {
     assert.equal(isFlyerHit({ src: '', medium: '', campaign: '' }), false);
     assert.equal(flyerSourceLabel({ src: '', medium: '', campaign: '' }), 'direct');
