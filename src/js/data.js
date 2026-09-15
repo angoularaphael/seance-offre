@@ -169,6 +169,7 @@ export const SOURCES = {
   story: "Story Instagram",
   fb: "Publication Facebook",
   wa: "WhatsApp",
+  whatsapp: "WhatsApp",
   email: "Campagne e-mail David",
 };
 

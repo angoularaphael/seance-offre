@@ -27,7 +27,7 @@ function isFlyerUtm(u) {
 
 function readSource() {
   const u = readUtm();
-  const raw = isFlyerUtm(u) ? "flyer" : u.src;
+  const raw = isFlyerUtm(u) ? "flyer" : u.src === "wa" ? "whatsapp" : u.src;
   if (raw) {
     try { sessionStorage.setItem(KEY, raw); } catch { /* mode privé */ }
     return raw;

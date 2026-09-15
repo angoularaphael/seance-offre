@@ -19,6 +19,15 @@ describe('tracker flyer QR', () => {
     );
   });
 
+  it('laisse le trafic WhatsApp à part du flyer', () => {
+    assert.equal(isFlyerHit({ src: 'whatsapp', medium: 'whatsapp', campaign: 'seance_offerte_2026' }), false);
+    assert.equal(
+      flyerSourceLabel({ src: 'whatsapp', medium: 'whatsapp', campaign: 'seance_offerte_2026' }),
+      'whatsapp'
+    );
+    assert.equal(flyerSourceLabel({ src: 'wa' }), 'whatsapp');
+  });
+
   it('laisse le trafic direct à part', () => {
     assert.equal(isFlyerHit({ src: '', medium: '', campaign: '' }), false);
     assert.equal(flyerSourceLabel({ src: '', medium: '', campaign: '' }), 'direct');
