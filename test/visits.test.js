@@ -19,6 +19,14 @@ describe('tracker flyer QR', () => {
     );
   });
 
+  it('laisse le trafic SMS à part du flyer', () => {
+    assert.equal(isFlyerHit({ src: 'sms', medium: 'sms', campaign: 'seance_offerte_2026' }), false);
+    assert.equal(
+      flyerSourceLabel({ src: 'sms', medium: 'sms', campaign: 'seance_offerte_2026' }),
+      'sms'
+    );
+  });
+
   it('laisse le trafic WhatsApp à part du flyer', () => {
     assert.equal(isFlyerHit({ src: 'whatsapp', medium: 'whatsapp', campaign: 'seance_offerte_2026' }), false);
     assert.equal(

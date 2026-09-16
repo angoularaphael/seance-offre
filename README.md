@@ -47,7 +47,7 @@ Chaque QR imprimé portera son paramètre. La source est mémorisée pour la ses
 start "" "http://localhost:5610/?src=flyer&dir=a"
 ```
 
-Sources reconnues : `flyer` · `affiche` · `porte` · `print` · `meta` · `story` · `fb` · `wa`.
+Sources reconnues : `flyer` · `affiche` · `porte` · `print` · `meta` · `story` · `fb` · `wa` · `whatsapp` · `sms` · `email`.
 
 Événements poussés dans `window.dataLayer` (et affichés en console en dev) :
 `page_vue`, `cta_clic`, `salle_choisie`, `jour_choisi`, `formulaire_commence`,

@@ -170,6 +170,7 @@ export const SOURCES = {
   fb: "Publication Facebook",
   wa: "WhatsApp",
   whatsapp: "WhatsApp",
+  sms: "SMS",
   email: "Campagne e-mail David",
 };
 
