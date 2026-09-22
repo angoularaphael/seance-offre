@@ -7,6 +7,11 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/s",
+      "destination": "/?src=sms",
+      "permanent": false
+    },
+    {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "bc-seance-offerte.vercel.app" }],
       "destination": "https://seance-offerte.boxingcenter.fr/$1",
